@@ -76,7 +76,7 @@ export default function StudentForm() {
       </label>
 
       <fieldset>
-        <legend className="text-sm font-medium">Subgroup/SIG email lists</legend>
+        <legend className="text-sm font-medium">hear about events in these areas:</legend>
         <div className="mt-2 grid grid-cols-1 gap-2">
           {defaultSubgroups.map((s) => (
             <label key={s.id} className="flex items-center gap-2">
