@@ -34,6 +34,7 @@ export async function POST(request) {
         main_opt_in: data.mainOptIn,
         subgroups: data.subgroups,
         scai_opt_in: Boolean(data.scaiOptIn),
+        notify_new: Boolean(data.notifyNewMajorsOrSubgroups),
       }, { onConflict: "email" })
       .select()
       .single();

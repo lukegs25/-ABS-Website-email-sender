@@ -3,38 +3,35 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border bg-white">
+    <div className="relative bg-white">
       <div className="pointer-events-none absolute inset-0 z-0">
-        <Image
-          src="/shakka.png"
-          alt="Background hand"
-          fill
-          priority
-          quality={100}
-          className="object-contain object-right md:object-right-bottom opacity-80 scale-[2] origin-right md:origin-right-bottom"
-          sizes="(min-width: 1024px) 1200px, 100vw"
-        />
+        <div className="absolute right-[-6rem] md:right-[-8rem] xl:right-[-14rem] 2xl:right-[-18rem] top-0 h-[80vh] w-1/2">
+          <Image
+            src="/shaka_clear.png"
+            alt="Background shaka hand"
+            fill
+            priority
+            className="object-contain object-right opacity-90 scale-110 xl:scale-105 2xl:scale-100 origin-right"
+            sizes="66vw"
+          />
+        </div>
       </div>
-
-      <section className="relative z-10 px-8 py-24 sm:px-12 lg:px-24 md:pr-[28rem]">
-        <h1 className="text-6xl sm:text-7xl md:text-8xl font-extrabold tracking-tight leading-[0.9] text-[color:var(--byu-blue)]">
+      <section className="relative z-10 py-28 pl-0 pr-8 sm:pl-0 sm:pr-12 lg:pl-0 lg:pr-24 xl:pr-40 2xl:pr-56 -ml-6 sm:-ml-6 lg:-ml-8 xl:-ml-10">
+        <h1 className="text-[clamp(4rem,12vw,16rem)] font-extrabold tracking-tight leading-[0.9] text-[color:var(--byu-blue)]">
           JOIN THE
         </h1>
-        <p className="mt-6 max-w-xl text-gray-700">
-          BYU AI in Business Society brings events, resources, and news to students and faculty.
-          Choose your path below and get on the right email lists.
-        </p>
+        {/* description removed per request */}
 
-        <div className="mt-10 flex flex-wrap gap-4">
-          <Link href="/student" className="rounded-md bg-[color:var(--byu-blue)] px-6 py-3 text-white font-semibold hover:opacity-90">
+        <div className="mt-12 flex flex-wrap gap-5">
+          <Link href="/student" className="rounded-md bg-[color:var(--byu-blue)] px-8 py-4 text-white text-lg font-semibold hover:opacity-90">
             I am a Student
           </Link>
-          <Link href="/teacher" className="rounded-md border border-[color:var(--byu-blue)] px-6 py-3 text-[color:var(--byu-blue)] font-semibold hover:bg-blue-50">
+          <Link href="/teacher" className="rounded-md border border-[color:var(--byu-blue)] bg-white/70 px-8 py-4 text-[color:var(--byu-blue)] text-lg font-semibold backdrop-blur-[1px] transition-colors duration-200 hover:bg-[color:var(--byu-blue)]/10">
             I am a Teacher
           </Link>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 text-lg sm:text-xl">
           <a
             href="https://clubs.byu.edu/p/clubview/18295873491185562"
             target="_blank"
@@ -44,6 +41,11 @@ export default function HomePage() {
             Sign up for the club at BYU
           </a>
         </div>
+
+        <h2 aria-label="AI IN BUSINESS SOCIETY" className="mt-8 text-[color:var(--byu-blue)] font-extrabold tracking-tight leading-[0.9]">
+          <span className="block text-[clamp(3rem,10vw,12rem)]">AI IN BUSINESS</span>
+          <span className="block text-[clamp(4rem,12vw,14rem)]">SOCIETY</span>
+        </h2>
       </section>
     </div>
   );

@@ -3,11 +3,10 @@ import Image from "next/image";
 
 export default function Header() {
   return (
-    <header className="w-full border-b bg-white">
-      <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3">
-          <Image src="/logo.jpeg" alt="AI in Business Society" width={32} height={32} className="h-8 w-8 object-contain" />
-          <span className="text-sm font-semibold tracking-wide text-[color:var(--byu-blue)]">AI in Business Society</span>
+    <header className="w-full border-b bg-white relative z-50">
+      <div className="mx-auto max-w-6xl px-6 py-6 flex items-center justify-between">
+        <Link href="/" className="flex items-center">
+          <Image src="/logo.png" alt="AI in Business Society" width={640} height={160} className="h-20 md:h-24 w-auto object-contain" />
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm">
           <Link href="/" className="hover:underline">Home</Link>

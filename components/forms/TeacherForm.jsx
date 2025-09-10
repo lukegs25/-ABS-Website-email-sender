@@ -24,6 +24,7 @@ export default function TeacherForm() {
       major: "",
       otherMajor: "",
       scaiOptIn: false,
+      notifyNewMajorsOrSubgroups: false,
     },
   });
 
@@ -78,11 +79,6 @@ export default function TeacherForm() {
   return (
     <div className="grid gap-10">
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 max-w-xl">
-        <label className="flex items-center gap-2">
-          <input type="checkbox" {...register("mainOptIn")} />
-          <span>Add me to the main email for next events, interesting facts, and highlights.</span>
-        </label>
-
         <div>
           <label className="block text-sm font-medium">Email</label>
           <input type="email" className="mt-1 w-full rounded border p-2" placeholder="you@byu.edu" {...register("email")} />
@@ -106,8 +102,13 @@ export default function TeacherForm() {
           </div>
         )}
 
+        <label className="flex items-center gap-3 rounded-md border-2 border-[color:var(--byu-blue)] bg-blue-50/20 p-3">
+          <input type="checkbox" className="h-6 w-6 accent-[color:var(--byu-blue)]" {...register("mainOptIn")} />
+          <span className="text-xl font-semibold text-[color:var(--byu-blue)]">Add me to the main email for the AI in Business Society, upcoming events, AI News, and more.</span>
+        </label>
+
         <fieldset>
-          <legend className="text-sm font-medium">Subgroups</legend>
+          <legend className="text-sm font-medium">Subgroup/SIG email lists</legend>
           <div className="mt-2 grid grid-cols-1 gap-2">
             {defaultSubgroups.map((s) => (
               <label key={s.id} className="flex items-center gap-2">
@@ -126,6 +127,11 @@ export default function TeacherForm() {
         <button disabled={submitting} className="rounded-md bg-[color:var(--byu-blue)] px-6 py-3 text-white font-semibold disabled:opacity-60">
           {submitting ? "Submitting..." : "Submit"}
         </button>
+
+        <label className="mt-2 flex items-center gap-2">
+          <input type="checkbox" {...register("notifyNewMajorsOrSubgroups")} />
+          <span>I want to be notified when my major is represented as a subgroup and/or new subgroups are made.</span>
+        </label>
       </form>
 
       <div>
