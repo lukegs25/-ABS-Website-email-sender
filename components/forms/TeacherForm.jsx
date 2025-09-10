@@ -110,7 +110,7 @@ export default function TeacherForm() {
         </label>
 
         <fieldset>
-          <legend className="text-sm font-medium">I want to be part of a student group focused on AI in this topic:</legend>
+          <legend className="text-sm font-medium">I want to hear about groups focused on AI in these areas:</legend>
           <div className="mt-2 grid grid-cols-1 gap-1">
             {defaultSubgroups.map((s) => (
               <label key={s.id} className="flex items-center gap-2">
