@@ -22,10 +22,12 @@ export default function StudentForm() {
       major: "",
       otherMajor: "",
       notifyNewMajorsOrSubgroups: false,
+      otherAreasInterest: "",
     },
   });
 
   const selectedMajor = watch("major");
+  const wantsOtherAreas = watch("notifyNewMajorsOrSubgroups");
 
   async function onSubmit(values) {
     setSubmitting(true);
@@ -72,12 +74,12 @@ export default function StudentForm() {
 
       <label className="flex items-center gap-3 rounded-md border-2 border-[color:var(--byu-blue)] bg-blue-50/20 p-3">
         <input type="checkbox" className="h-6 w-6 accent-[color:var(--byu-blue)]" {...register("mainOptIn")} />
-        <span className="text-xl font-semibold text-[color:var(--byu-blue)]">Add me to the main email for the AI in Business Society, upcoming events, AI News, and more.</span>
+        <span className="text-xl font-semibold text-[color:var(--byu-blue)]">AI in Business Society Email: upcoming events, AI News, and more</span>
       </label>
 
       <fieldset>
-        <legend className="text-sm font-medium">hear about events in these areas:</legend>
-        <div className="mt-2 grid grid-cols-1 gap-2">
+        <legend className="text-sm font-medium">I want to be part of a student group focused on AI in this topic:</legend>
+        <div className="mt-2 grid grid-cols-1 gap-1">
           {defaultSubgroups.map((s) => (
             <label key={s.id} className="flex items-center gap-2">
               <input type="checkbox" value={s.id} {...register("subgroups")} />
@@ -89,8 +91,15 @@ export default function StudentForm() {
 
       <label className="flex items-center gap-2">
         <input type="checkbox" {...register("notifyNewMajorsOrSubgroups")} />
-        <span>I want to be notified when my major is represented as a subgroup and/or new subgroups are made.</span>
+        <span>I want to be updated about new groups and AI in other areas as well</span>
       </label>
+
+      {wantsOtherAreas && (
+        <div>
+          <label className="block text-sm font-medium">Add an area you’re interested in</label>
+          <input className="mt-1 w-full rounded border p-2" placeholder="e.g., ai in healthcare, ai in law, ai in music" {...register("otherAreasInterest")} />
+        </div>
+      )}
 
       <button disabled={submitting} className="rounded-md bg-[color:var(--byu-blue)] px-6 py-3 text-white font-semibold disabled:opacity-60">
         {submitting ? "Submitting..." : "Submit"}

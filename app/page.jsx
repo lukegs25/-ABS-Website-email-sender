@@ -11,13 +11,13 @@ export default function HomePage() {
             alt="Background shaka hand"
             fill
             priority
-            className="object-contain object-right opacity-90 scale-110 xl:scale-105 2xl:scale-100 origin-right"
+            className="object-contain object-right opacity-90 scale-125 xl:scale-115 2xl:scale-110 origin-right"
             sizes="66vw"
           />
         </div>
       </div>
       <section className="relative z-10 py-28 pl-0 pr-8 sm:pl-0 sm:pr-12 lg:pl-0 lg:pr-24 xl:pr-40 2xl:pr-56 -ml-6 sm:-ml-6 lg:-ml-8 xl:-ml-10">
-        <h1 className="text-[clamp(4rem,12vw,16rem)] font-extrabold tracking-tight leading-[0.9] text-[color:var(--byu-blue)]">
+        <h1 className="text-[clamp(3.5rem,10vw,14rem)] font-extrabold tracking-tight leading-[0.9] text-[color:var(--byu-blue)]">
           JOIN THE
         </h1>
         {/* description removed per request */}
@@ -43,8 +43,8 @@ export default function HomePage() {
         </div>
 
         <h2 aria-label="AI IN BUSINESS SOCIETY" className="mt-8 text-[color:var(--byu-blue)] font-extrabold tracking-tight leading-[0.9]">
-          <span className="block text-[clamp(3rem,10vw,12rem)]">AI IN BUSINESS</span>
-          <span className="block text-[clamp(4rem,12vw,14rem)]">SOCIETY</span>
+          <span className="block text-[clamp(2.5rem,9vw,10rem)]">AI IN BUSINESS</span>
+          <span className="block text-[clamp(3.5rem,11vw,12rem)]">SOCIETY</span>
         </h2>
       </section>
     </div>

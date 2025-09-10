@@ -4,9 +4,9 @@ import Image from "next/image";
 export default function Header() {
   return (
     <header className="w-full border-b bg-white relative z-50">
-      <div className="mx-auto max-w-6xl px-6 py-6 flex items-center justify-between">
+      <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center">
-          <Image src="/logo.png" alt="AI in Business Society" width={640} height={160} className="h-20 md:h-24 w-auto object-contain" />
+          <Image src="/logo.png" alt="AI in Business Society" width={640} height={160} className="h-14 md:h-16 w-auto object-contain" />
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm">
           <Link href="/" className="hover:underline">Home</Link>
