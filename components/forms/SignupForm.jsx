@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { subscriberSchema, scaiLeadSchema } from "@/lib/validators";
 import { defaultSubgroups, exampleMajors } from "@/lib/constants";
 
-export default function SignupForm({ role, includeScaiPanel }) {
+export default function SignupForm({ role, includeScaiPanel, supabase }) {
   const [submitting, setSubmitting] = useState(false);
   const [showScai, setShowScai] = useState(false);
 
@@ -35,12 +35,7 @@ export default function SignupForm({ role, includeScaiPanel }) {
   async function onSubmit(values) {
     setSubmitting(true);
     try {
-      const res = await fetch("/api/subscribers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      const data = await res.json();
+      //ADD SUPABASE CALL HERE
       if (!res.ok) throw new Error(data.error || "Failed to submit");
       alert("You are in. Check your inbox for a welcome note.");
     } catch (e) {
