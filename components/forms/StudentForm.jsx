@@ -100,7 +100,7 @@ export default function StudentForm() {
         const { error } = await supabase.from('new_subscribers').insert(inserts);
 
         if (error) throw new Error("Failed to subscribe");
-        alert("You are in. Check your inbox for a welcome note.");
+        alert("You are in. Expect to hear from us soon!");
       }
     } catch (e) {
       alert(e.message);
