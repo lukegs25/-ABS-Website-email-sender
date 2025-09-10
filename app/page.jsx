@@ -5,7 +5,7 @@ export default function HomePage() {
   return (
     <div className="relative bg-white">
       <div className="pointer-events-none absolute inset-0 z-0">
-        <div className="absolute right-[-6rem] md:right-[-8rem] xl:right-[-14rem] 2xl:right-[-18rem] top-0 h-[80vh] w-1/2">
+        <div className="absolute right-[-6rem] md:right-[-8rem] xl:right-[-14rem] 2xl:right-[-18rem] top-0 h-[80vh] w-1/2 min-w-[560px] md:min-w-[640px] xl:min-w-[780px]">
           <Image
             src="/shaka_clear.png"
             alt="Background shaka hand"
