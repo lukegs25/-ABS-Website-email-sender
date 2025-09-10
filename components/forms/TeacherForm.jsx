@@ -24,6 +24,7 @@ export default function TeacherForm() {
       major: "",
       otherMajor: "",
       scaiOptIn: false,
+      advisorInterest: false,
       notifyNewMajorsOrSubgroups: false,
       otherAreasInterest: "",
     },
@@ -104,15 +105,45 @@ export default function TeacherForm() {
           </div>
         )}
 
-        <label className="flex items-center gap-3 rounded-md border-2 border-[color:var(--byu-blue)] bg-blue-50/20 p-3">
+        <label className="flex items-center gap-3 rounded-md border-2 border-[color:var(--byu-blue)] bg-blue-50/20 p-3 transition-colors duration-200 hover:bg-[color:var(--byu-blue)]/10">
           <input type="checkbox" className="h-6 w-6 accent-[color:var(--byu-blue)]" {...register("mainOptIn")} />
           <span className="text-xl font-semibold text-[color:var(--byu-blue)]">AI in Business Society Email: upcoming events, AI News, and more</span>
+        </label>
+
+        <div className="rounded-md border-2 border-[color:var(--byu-blue)] bg-blue-50/20 p-3 transition-colors duration-200 hover:bg-[color:var(--byu-blue)]/10">
+          <div className="flex items-center justify-between gap-3">
+            <label className="flex items-center gap-3">
+              <input type="checkbox" className="h-6 w-6 accent-[color:var(--byu-blue)]" {...register("scaiOptIn")} />
+              <span className="text-xl font-semibold text-[color:var(--byu-blue)]">I want to sign up for the Students Consulting on AI (SCAI) program</span>
+            </label>
+            <button type="button" onClick={() => setShowScai((v) => !v)} className="rounded-md border px-3 py-1 text-sm text-[color:var(--byu-blue)] border-[color:var(--byu-blue)] hover:bg-[color:var(--byu-blue)]/10">
+              {showScai ? "Hide details" : "Details"}
+            </button>
+          </div>
+          {showScai && (
+            <div className="mt-3 rounded-md border-2 border-[color:var(--byu-blue)] bg-blue-50/30 p-3 text-sm text-[color:var(--byu-blue)]">
+              <p className="font-semibold">The SCAI Program:</p>
+              <ul className="mt-2 list-disc pl-5 space-y-2">
+                <li><span className="font-semibold">AI Curriculum Integration:</span> Personalized guidance on embedding AI concepts and tools directly into your class content.</li>
+                <li><span className="font-semibold">Personal Student Consulting:</span> One-on-one support to help you and your students leverage AI, making coursework more dynamic and relevant.</li>
+                <li><span className="font-semibold">Tool Walkthroughs:</span> Stay ahead with hands-on training in the latest AI technologies, tailored to your academic goals.</li>
+                <li><span className="font-semibold">Empower & Raise the Bar:</span> Students are eager to learn faster and better. Learn what it means to help students ethically produce and become with AI.</li>
+              </ul>
+              <p className="mt-3 font-semibold">Be a part of the community launching education into the future!</p>
+              <p className="mt-1 font-semibold">Learn what SCAI can do for your classroom!</p>
+            </div>
+          )}
+        </div>
+
+        <label className="flex items-center gap-3 rounded-md border-2 border-[color:var(--byu-blue)] bg-blue-50/20 p-3 transition-colors duration-200 hover:bg-[color:var(--byu-blue)]/10">
+          <input type="checkbox" className="h-6 w-6 accent-[color:var(--byu-blue)]" {...register("advisorInterest")} />
+          <span className="text-xl font-semibold text-[color:var(--byu-blue)]">I would be interested in supporting and/or helping advise a student group centered on AI in my department/major</span>
         </label>
 
         <fieldset>
           <legend className="text-sm font-medium">I want to hear about groups focused on AI in these areas:</legend>
           <div className="mt-2 grid grid-cols-1 gap-1">
-            {defaultSubgroups.map((s) => (
+            {defaultSubgroups.filter((s) => s.id !== 'scai').map((s) => (
               <label key={s.id} className="flex items-center gap-2">
                 <input type="checkbox" value={s.id} {...register("subgroups")} />
                 <span>{s.name}</span>
@@ -121,19 +152,14 @@ export default function TeacherForm() {
           </div>
         </fieldset>
 
-        <label className="flex items-center gap-2">
-          <input type="checkbox" {...register("scaiOptIn")} />
-          <span>Subscribe to Students Consultanting teachers on AI (SCAI)</span>
+        <label className="mt-2 flex items-center gap-2">
+          <input type="checkbox" {...register("notifyNewMajorsOrSubgroups")} />
+          <span>I want to be updated about new groups and AI in other areas as well</span>
         </label>
 
         <button disabled={submitting} className="rounded-md bg-[color:var(--byu-blue)] px-6 py-3 text-white font-semibold disabled:opacity-60">
           {submitting ? "Submitting..." : "Submit"}
         </button>
-
-        <label className="mt-2 flex items-center gap-2">
-          <input type="checkbox" {...register("notifyNewMajorsOrSubgroups")} />
-          <span>I want to be updated about new groups and AI in other areas as well</span>
-        </label>
 
         {wantsOtherAreas && (
           <div>
@@ -142,38 +168,7 @@ export default function TeacherForm() {
           </div>
         )}
       </form>
-
-      <div>
-        <button onClick={() => setShowScai((v) => !v)} className="rounded-md border px-4 py-2">
-          {showScai ? "Hide" : "Open"} SCAI panel
-        </button>
-        {showScai && (
-          <div className="mt-4 rounded-lg border p-4">
-            <h2 className="text-xl font-semibold">Students Consultanting teachers on AI (SCAI)</h2>
-            <p className="mt-2 text-gray-700">Request help from student consultants for your course or project.</p>
-
-            <form className="mt-4 grid gap-4 max-w-xl" onSubmit={submitScaiLead}>
-              <div>
-                <label className="block text-sm font-medium">Name</label>
-                <input name="name" className="mt-1 w-full rounded border p-2" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Email</label>
-                <input name="scaiEmail" type="email" className="mt-1 w-full rounded border p-2" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Course</label>
-                <input name="course" className="mt-1 w-full rounded border p-2" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Brief need</label>
-                <textarea name="details" rows={4} className="mt-1 w-full rounded border p-2" />
-              </div>
-              <button className="rounded-md bg-[color:var(--byu-blue)] px-6 py-3 text-white font-semibold">Submit interest</button>
-            </form>
-          </div>
-        )}
-      </div>
+      
     </div>
   );
 }
