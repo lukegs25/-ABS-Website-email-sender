@@ -104,6 +104,17 @@ export default function StudentForm() {
       <button disabled={submitting} className="rounded-md bg-[color:var(--byu-blue)] px-6 py-3 text-white font-semibold disabled:opacity-60">
         {submitting ? "Submitting..." : "Submit"}
       </button>
+
+      <div className="text-sm sm:text-base">
+        <a
+          href="https://calendar.google.com/calendar/u/0?cid=YzI0MDEyM2MzZmFhNTY0NjU3Nzc1OTUwOGI0NGFkZTI4ZmMwODU2NDg2ZmE4OWNlOTFhN2U2OTgyNDIxNGFlZkBncm91cC5jYWxlbmRhci5nb29nbGUuY29t"
+          target="_blank"
+          rel="noreferrer"
+          className="text-[color:var(--byu-blue)] underline"
+        >
+          Don't forget to join our Google Calendar
+        </a>
+      </div>
     </form>
   );
 }

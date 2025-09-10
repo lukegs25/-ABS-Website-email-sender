@@ -33,12 +33,23 @@ export default function HomePage() {
 
         <div className="mt-8 text-lg sm:text-xl">
           <a
+            href="https://calendar.google.com/calendar/u/0?cid=YzI0MDEyM2MzZmFhNTY0NjU3Nzc1OTUwOGI0NGFkZTI4ZmMwODU2NDg2ZmE4OWNlOTFhN2U2OTgyNDIxNGFlZkBncm91cC5jYWxlbmRhci5nb29nbGUuY29t"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[color:var(--byu-blue)] underline"
+          >
+            Stay updated with our Google Calendar
+          </a>
+        </div>
+
+        <div className="mt-4 text-lg sm:text-xl">
+          <a
             href="https://clubs.byu.edu/p/clubview/18295873491185562"
             target="_blank"
             rel="noreferrer"
             className="text-[color:var(--byu-blue)] underline"
           >
-            Sign up for the club at BYU
+            BYU's AI in Business Society club page
           </a>
         </div>
 
