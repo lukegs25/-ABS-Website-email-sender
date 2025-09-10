@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+:root {
+  --byu-blue: #002e5d;
+}
+
+html, body {
+  height: 100%;
+  background: #ffffff;
+}
+
+
