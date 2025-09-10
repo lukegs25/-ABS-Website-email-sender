@@ -81,7 +81,8 @@ export default function StudentForm() {
           email,
           audience_id,
           major: userMajor,
-          other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null
+          other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null,
+          is_student: true
         }));
         const { error } = await supabase.from('new_subscribers').insert(inserts);
         
@@ -93,7 +94,8 @@ export default function StudentForm() {
           email,
           audience_id,
           major: userMajor,
-          other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null
+          other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null,
+          is_student: true
         }));
         const { error } = await supabase.from('new_subscribers').insert(inserts);
 
