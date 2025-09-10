@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { subscriberSchema } from "@/lib/validators";
 import { defaultSubgroups, exampleMajors } from "@/lib/constants";
+import { createClient } from "@/utils/supabase/client";
 
 export default function StudentForm() {
   const [submitting, setSubmitting] = useState(false);
@@ -32,14 +33,73 @@ export default function StudentForm() {
   async function onSubmit(values) {
     setSubmitting(true);
     try {
-      const res = await fetch("/api/subscribers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to submit");
-      alert("You are in. Check your inbox for a welcome note.");
+      const supabase = createClient();
+      const { email, mainOptIn, subgroups, major, otherMajor, notifyNewMajorsOrSubgroups, otherAreasInterest } = values;
+
+      if (!email) throw new Error("Email required");
+
+      const audiences = [];
+      
+      // Determine user's major
+      const userMajor = major === 'Other' ? otherMajor : major;
+      
+      // Main AI in Business newsletter
+      if (mainOptIn) audiences.push(8); // ai-in-business-main
+      
+      // Special interest groups
+      if (subgroups?.includes('scai')) audiences.push(7); // scai-students
+      if (subgroups?.includes('marketing')) audiences.push(5); // marketing
+      if (subgroups?.includes('finance')) audiences.push(6); // finance
+      if (subgroups?.includes('semi_conductor')) audiences.push(4); // semi-conductors
+      if (subgroups?.includes('accounting')) audiences.push(9); // accounting
+
+      // Handle "other areas" interest
+      if (notifyNewMajorsOrSubgroups && otherAreasInterest?.trim()) {
+        audiences.push(3); // etc audience
+      }
+
+      if (audiences.length === 0) throw new Error("Please select at least one newsletter");
+
+      // Check for existing subscriptions
+      const { data: existing } = await supabase
+        .from('new_subscribers')
+        .select('audience_id')
+        .eq('email', email)
+        .in('audience_id', audiences);
+
+      if (existing && existing.length > 0) {
+        const existingAudiences = existing.map(sub => sub.audience_id);
+        const newAudiences = audiences.filter(id => !existingAudiences.includes(id));
+        
+        if (newAudiences.length === 0) {
+          alert("You're already subscribed to all selected newsletters!");
+          return;
+        }
+        
+        // Only insert new subscriptions
+        const inserts = newAudiences.map(audience_id => ({
+          email,
+          audience_id,
+          major: userMajor,
+          other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null
+        }));
+        const { error } = await supabase.from('new_subscribers').insert(inserts);
+        
+        if (error) throw new Error("Failed to subscribe");
+        alert(`Added to ${newAudiences.length} new newsletter(s)! You were already subscribed to ${existingAudiences.length} of them.`);
+      } else {
+        // No existing subscriptions, insert all
+        const inserts = audiences.map(audience_id => ({
+          email,
+          audience_id,
+          major: userMajor,
+          other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null
+        }));
+        const { error } = await supabase.from('new_subscribers').insert(inserts);
+
+        if (error) throw new Error("Failed to subscribe");
+        alert("You are in. Check your inbox for a welcome note.");
+      }
     } catch (e) {
       alert(e.message);
     } finally {
