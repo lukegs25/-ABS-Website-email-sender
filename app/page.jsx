@@ -33,7 +33,7 @@ export default function HomePage() {
 
         <div className="mt-8 text-lg sm:text-xl">
           <a
-            href="https://calendar.google.com/calendar/u/0?cid=YzI0MDEyM2MzZmFhNTY0NjU3Nzc1OTUwOGI0NGFkZTI4ZmMwODU2NDg2ZmE4OWNlOTFhN2U2OTgyNDIxNGFlZkBncm91cC5jYWxlbmRhci5nb29nbGUuY29t"
+            href="https://calendar.google.com/calendar/embed?src=c240123c3faa5646577759508b44ade28fc0856486fa89ce91a7e69824214aef%40group.calendar.google.com&ctz=America%2FDenver"
             target="_blank"
             rel="noreferrer"
             className="text-[color:var(--byu-blue)] underline"
