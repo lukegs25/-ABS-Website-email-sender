@@ -36,7 +36,7 @@ export default function HomePage() {
             href="https://calendar.google.com/calendar/embed?src=c240123c3faa5646577759508b44ade28fc0856486fa89ce91a7e69824214aef%40group.calendar.google.com&ctz=America%2FDenver"
             target="_blank"
             rel="noreferrer"
-            className="text-[color:var(--byu-blue)] underline"
+            className="inline-block text-[color:var(--byu-blue)] underline bg-white/70 backdrop-blur-sm rounded px-2 py-1 shadow-sm"
           >
             Stay updated with our Google Calendar
           </a>
@@ -47,7 +47,7 @@ export default function HomePage() {
             href="https://clubs.byu.edu/p/clubview/18295873491185562"
             target="_blank"
             rel="noreferrer"
-            className="text-[color:var(--byu-blue)] underline"
+            className="inline-block text-[color:var(--byu-blue)] underline bg-white/70 backdrop-blur-sm rounded px-2 py-1 shadow-sm"
           >
             BYU's AI in Business Society club page
           </a>
