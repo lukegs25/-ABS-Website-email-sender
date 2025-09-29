@@ -1,42 +1,49 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const AUDIENCE_NAMES = {
-  8: "AI in Business (main)",
-  7: "SCAI - Students", 
-  6: "Finance",
-  5: "Marketing",
-  4: "Semi-conductors",
-  9: "Accounting",
-  3: "Etc/general",
-  1: "SCAI - Teachers",
-  2: "Teachers wanting to support students"
-};
-
 export default function SubscriberManager() {
   const [subscribers, setSubscribers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedAudience, setSelectedAudience] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [stats, setStats] = useState({});
+  const [audienceNames, setAudienceNames] = useState({});
 
   useEffect(() => {
-    fetchSubscribers();
+    fetchData();
   }, []);
 
-  const fetchSubscribers = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/subscribers');
-      if (response.ok) {
-        const data = await response.json();
-        setSubscribers(data.subscribers);
-        setStats(data.stats);
+      
+      const [subscribersResponse, audiencesResponse] = await Promise.all([
+        fetch('/api/admin/subscribers'),
+        fetch('/api/admin/send-email')
+      ]);
+
+      if (subscribersResponse.ok) {
+        const subscribersData = await subscribersResponse.json();
+        setSubscribers(subscribersData.subscribers);
+        setStats(subscribersData.stats);
       } else {
         console.error('Failed to fetch subscribers');
       }
+
+      if (audiencesResponse.ok) {
+        const audiencesData = await audiencesResponse.json();
+        // Convert audiences array to a lookup object
+        const audienceMap = {};
+        audiencesData.audiences?.forEach(audience => {
+          audienceMap[audience.id] = audience.name;
+        });
+        console.log(audienceMap);
+        setAudienceNames(audienceMap);
+      } else {
+        console.error('Failed to fetch audiences');
+      }
     } catch (error) {
-      console.error('Error fetching subscribers:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -56,7 +63,7 @@ export default function SubscriberManager() {
   const exportSubscribers = () => {
     const csvData = filteredSubscribers.map(sub => ({
       email: sub.email,
-      audience: AUDIENCE_NAMES[sub.audience_id] || `Audience ${sub.audience_id}`,
+      audience: audienceNames[sub.audience_id] || `Audience ${sub.audience_id}`,
       major: sub.major || '',
       is_student: sub.is_student ? 'Student' : 'Teacher',
       created_at: new Date(sub.created_at).toLocaleDateString()
@@ -130,7 +137,7 @@ export default function SubscriberManager() {
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[color:var(--byu-blue)]"
           >
             <option value="all">All Audiences</option>
-            {Object.entries(AUDIENCE_NAMES).map(([id, name]) => (
+            {Object.entries(audienceNames).map(([id, name]) => (
               <option key={id} value={id}>{name}</option>
             ))}
           </select>
@@ -172,7 +179,7 @@ export default function SubscriberManager() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {AUDIENCE_NAMES[subscriber.audience_id] || `Audience ${subscriber.audience_id}`}
+                    {audienceNames[subscriber.audience_id] || `Audience ${subscriber.audience_id}`}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
