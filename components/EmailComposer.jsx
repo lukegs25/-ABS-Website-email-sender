@@ -21,8 +21,7 @@ export default function EmailComposer({ initialData = {} }) {
     subject: initialData.subject || "",
     content: initialData.content || "",
     audienceIds: [],
-    fromName: "AI in Business Society",
-    testMode: true
+    fromName: "AI in Business Society"
   });
   const [results, setResults] = useState(null);
 
@@ -184,20 +183,6 @@ export default function EmailComposer({ initialData = {} }) {
           </p>
         </div>
 
-        {/* Test Mode Toggle */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="testMode"
-            checked={formData.testMode}
-            onChange={(e) => setFormData(prev => ({ ...prev, testMode: e.target.checked }))}
-            className="h-4 w-4 text-[color:var(--byu-blue)] border-gray-300 rounded focus:ring-[color:var(--byu-blue)]"
-          />
-          <label htmlFor="testMode" className="text-sm text-gray-700">
-            Test Mode (sends to max 5 people per audience for testing)
-          </label>
-        </div>
-
         {/* Audience Selection */}
         <div>
           <div className="flex justify-between items-center mb-3">
@@ -241,15 +226,8 @@ export default function EmailComposer({ initialData = {} }) {
             disabled={sending}
             className="px-6 py-2 bg-[color:var(--byu-blue)] text-white rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {sending ? 'Sending...' : (formData.testMode ? 'Send Test Email' : 'Send Email')}
+            {sending ? 'Sending...' : 'Send Email'}
           </button>
-          
-          {!formData.testMode && (
-            <div className="flex items-center text-orange-600 text-sm">
-              <span className="inline-block w-4 h-4 bg-orange-600 rounded-full mr-2"></span>
-              Production mode - will send to all subscribers!
-            </div>
-          )}
         </div>
       </form>
 
@@ -257,7 +235,7 @@ export default function EmailComposer({ initialData = {} }) {
       {results && (
         <div className="mt-8 p-4 bg-gray-50 rounded-md">
           <h3 className="text-lg font-semibold mb-3">
-            Email Send Results {results.summary.testMode && "(TEST MODE)"}
+            Email Send Results
           </h3>
           
           <div className="mb-4">
@@ -273,7 +251,6 @@ export default function EmailComposer({ initialData = {} }) {
                 {result.success ? (
                   <p className="text-green-700 text-sm">
                     Sent successfully
-                    {result.testMode && ` (${result.recipientCount} test recipients)`}
                   </p>
                 ) : (
                   <p className="text-red-700 text-sm">Error: {result.error}</p>
