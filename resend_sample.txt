@@ -13,6 +13,7 @@ resend.contacts.create({
 
 
 AudienceID's:
+Spencer: 32890af7-47dd-4827-b9e5-05b606ec1c84
 AI in Business (main): dd09d752-45b5-4f48-8fec-1fc4ee692b92
 SCAI - Students: c53bb7bc-31f2-47e3-832b-e69ced4c7f0e
 Finance: cc40b8fc-e023-4200-b430-67e4384a0154
