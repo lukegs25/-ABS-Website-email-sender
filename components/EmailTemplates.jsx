@@ -144,6 +144,12 @@ The AI in Business Society Team</p>
 export default function EmailTemplates({ onUseTemplate }) {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [customFields, setCustomFields] = useState({});
+  const [niche, setNiche] = useState("");
+  const [loadingNews, setLoadingNews] = useState(false);
+  const [useAiNews, setUseAiNews] = useState(false);
+  const [refine, setRefine] = useState("");
+  const [previewNews, setPreviewNews] = useState("");
+  const [additionalInfo, setAdditionalInfo] = useState("");
 
   const handleTemplateSelect = (templateKey) => {
     setSelectedTemplate(templateKey);
@@ -189,12 +195,71 @@ export default function EmailTemplates({ onUseTemplate }) {
       content = content.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
     });
 
+    // Append optional Additional Info block if provided
+    if (additionalInfo && additionalInfo.trim()) {
+      const extra = `\n\n<h3>Additional Info</h3>\n<p>${additionalInfo.trim().replace(/\n/g, '<br/>')}</p>`;
+      content += extra;
+    }
+
     onUseTemplate({ subject, content });
     
     // Reset state
     setSelectedTemplate("");
     setCustomFields({});
+    setAdditionalInfo("");
   };
+
+  const NICHES = [
+    "AI in Healthcare",
+    "AI in Finance",
+    "AI in Marketing",
+    "AI in Accounting",
+    "AI in Supply Chain",
+    "AI in Education",
+  ];
+
+  async function insertAiNews() {
+    if (!niche) {
+      alert("Please select a subgroup/niche");
+      return;
+    }
+    setLoadingNews(true);
+    try {
+      const res = await fetch('/api/ai-news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ niche, refine })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to fetch AI news');
+        return;
+      }
+      const newsBlock = `\n\n<h3>📰 ${niche} - Latest AI News</h3>\n${data.content.replace(/\n/g, '<br/>')}\n`;
+      setPreviewNews(newsBlock);
+      // Try to fill NEWS placeholders if they exist, otherwise append
+      const hasNewsPlaceholders = Object.keys(customFields).some(k => k.includes('NEWS'));
+      if (hasNewsPlaceholders) {
+        const firstNewsKey = Object.keys(customFields).find(k => k.includes('NEWS'));
+        setCustomFields(prev => ({ ...prev, [firstNewsKey]: data.content }));
+      } else {
+        // Hold in preview; user can insert
+      }
+    } catch (e) {
+      alert('Unexpected error fetching AI news');
+    } finally {
+      setLoadingNews(false);
+    }
+  }
+
+  function applyPreviewToTemplate() {
+    if (!selectedTemplate || !previewNews) return;
+    onUseTemplate({
+      subject: EMAIL_TEMPLATES[selectedTemplate]?.subject || '',
+      content: (EMAIL_TEMPLATES[selectedTemplate]?.content || '') + previewNews
+    });
+    setPreviewNews("");
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -219,6 +284,62 @@ export default function EmailTemplates({ onUseTemplate }) {
 
         {selectedTemplate && (
           <div className="space-y-4">
+            {/* Toggle AI News, niche selector, refine, and actions */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={useAiNews} onChange={(e) => setUseAiNews(e.target.checked)} />
+                <span>Include AI News per audience</span>
+              </label>
+              {useAiNews && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Select subgroup/niche</label>
+                    <select
+                      value={niche}
+                      onChange={(e) => setNiche(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[color:var(--byu-blue)]"
+                    >
+                      <option value="">Choose a niche...</option>
+                      {NICHES.map(n => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Optional refine prompt</label>
+                    <input
+                      type="text"
+                      value={refine}
+                      onChange={(e) => setRefine(e.target.value)}
+                      placeholder="e.g., focus on regulation, or model releases"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[color:var(--byu-blue)]"
+                    />
+                  </div>
+                  <div className="sm:col-span-2 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={insertAiNews}
+                      disabled={loadingNews}
+                      className="px-4 py-2 bg-[color:var(--byu-blue)] text-white rounded-md hover:opacity-90 disabled:opacity-60"
+                    >
+                      {loadingNews ? 'Fetching...' : (previewNews ? 'Regenerate News' : 'Generate News')}
+                    </button>
+                    {previewNews && (
+                      <button
+                        type="button"
+                        onClick={applyPreviewToTemplate}
+                        className="px-4 py-2 border border-[color:var(--byu-blue)] text-[color:var(--byu-blue)] rounded-md hover:bg-[color:var(--byu-blue)]/10"
+                      >
+                        Insert Preview into Template
+                      </button>
+                    )}
+                  </div>
+                  {previewNews && (
+                    <div className="sm:col-span-2 bg-gray-50 p-3 rounded-md text-sm" dangerouslySetInnerHTML={{ __html: previewNews }} />
+                  )}
+                </div>
+              )}
+            </div>
             <div className="bg-gray-50 p-4 rounded-md">
               <h4 className="font-medium mb-2">Template Preview:</h4>
               <p className="text-sm text-gray-600 mb-2">
@@ -262,6 +383,18 @@ export default function EmailTemplates({ onUseTemplate }) {
                 </div>
               </div>
             )}
+
+            {/* Optional Additional Info box */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Additional Info (optional)</label>
+              <textarea
+                value={additionalInfo}
+                onChange={(e) => setAdditionalInfo(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[color:var(--byu-blue)]"
+                placeholder="Add extra notes, links, reminders, etc."
+              />
+            </div>
 
             <button
               onClick={applyTemplate}
