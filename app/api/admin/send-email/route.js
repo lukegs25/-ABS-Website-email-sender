@@ -69,7 +69,7 @@ export async function POST(request) {
           if (subscribers && subscribers.length > 0) {
             const emails = subscribers.map(s => s.email);
             const { data, error: sendError } = await resend.emails.send({
-              from: `${fromName} <no-reply@aiinbusinesssociety.com>`,
+              from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
               to: emails,
               subject: `[TEST] ${subject}`,
               html: `
@@ -111,7 +111,7 @@ export async function POST(request) {
           // Production mode - send to Resend audience
           const { data, error: sendError } = await resend.broadcast.send({
             audienceId: audienceInfo.resendId,
-            from: `${fromName} <no-reply@aiinbusinesssociety.com>`,
+            from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
             subject: subject,
             html: `
               <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
