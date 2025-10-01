@@ -1,10 +1,37 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function AdminAuth({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const cookies = document.cookie.split(';');
+      const adminCookie = cookies.find(cookie => 
+        cookie.trim().startsWith('admin_auth=')
+      );
+      
+      if (adminCookie) {
+        console.log('Found existing admin_auth cookie');
+        setIsAuthenticated(true);
+      }
+    };
+    
+    checkAuth();
+  }, []);
+
+  const setCookie = (name, value, days = 7) => {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    
+    // Set cookie with proper attributes for both local and production
+    const cookieString = `${name}=${value}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+    document.cookie = cookieString;
+    
+    console.log('Set admin_auth cookie:', cookieString);
+  };
 
   const handleAuth = (e) => {
     e.preventDefault();
@@ -14,6 +41,10 @@ export default function AdminAuth({ children }) {
     if (password === adminPassword) {
       setIsAuthenticated(true);
       setError("");
+      
+      // Set the admin_auth cookie that the API expects
+      setCookie('admin_auth', 'authenticated');
+      console.log('Admin authentication successful - cookie set');
     } else {
       setError("Invalid password");
       setPassword("");
@@ -62,5 +93,5 @@ export default function AdminAuth({ children }) {
     );
   }
 
-  return children;
+    return children;
 }
