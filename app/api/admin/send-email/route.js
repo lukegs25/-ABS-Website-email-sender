@@ -200,11 +200,20 @@ export async function GET() {
       countMap[sub.audience_id] = (countMap[sub.audience_id] || 0) + 1;
     });
 
-    const audiences = Object.entries(AUDIENCE_MAP).map(([id, info]) => ({
-      id: parseInt(id),
-      name: info.name,
-      subscriberCount: countMap[id] || 0
-    }));
+    // Build a union of known mapped audiences and any IDs found in Supabase
+    const knownIds = new Set(Object.keys(AUDIENCE_MAP).map(String));
+    const supabaseIds = new Set(Object.keys(countMap).map(String));
+    const allIds = new Set([...knownIds, ...supabaseIds]);
+
+    const audiences = Array.from(allIds).map((idStr) => {
+      const id = parseInt(idStr, 10);
+      const info = AUDIENCE_MAP[id];
+      return {
+        id,
+        name: info?.name || `Audience ${id}`,
+        subscriberCount: countMap[id] || 0
+      };
+    }).sort((a, b) => a.id - b.id);
 
     return NextResponse.json({
       audiences,

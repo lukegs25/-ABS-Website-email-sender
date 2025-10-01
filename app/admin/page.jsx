@@ -1,14 +1,29 @@
 "use client";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AdminAuth from "@/components/AdminAuth";
 import EmailComposer from "@/components/EmailComposer";
 import SubscriberManager from "@/components/SubscriberManager";
 import EmailTemplates from "@/components/EmailTemplates";
+import AudienceManager from "@/components/AudienceManager";
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState("compose");
+  const [activeTab, setActiveTab] = useState("templates");
   const [emailData, setEmailData] = useState({ subject: "", content: "" });
+  const [showGuide, setShowGuide] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem('admin_welcome_seen');
+    setShowGuide(!seen);
+  }, []);
+
+  function closeGuide() {
+    if (dontShowAgain) {
+      localStorage.setItem('admin_welcome_seen', '1');
+    }
+    setShowGuide(false);
+  }
 
   const handleUseTemplate = (templateData) => {
     setEmailData(templateData);
@@ -16,10 +31,11 @@ export default function AdminPage() {
   };
 
   const tabs = [
-    { id: "compose", label: "Compose Email" },
     { id: "templates", label: "Templates" },
+    { id: "compose", label: "Compose Email" },
+    { id: "test", label: "Test Email" },
     { id: "subscribers", label: "Subscribers" },
-    { id: "test", label: "Test Email" }
+    { id: "audiences", label: "Audiences" }
   ];
 
   return (
@@ -76,6 +92,12 @@ export default function AdminPage() {
                   <EmailTemplates onUseTemplate={handleUseTemplate} />
                 </div>
               )}
+
+              {activeTab === "audiences" && (
+                <div className="p-6">
+                  <AudienceManager />
+                </div>
+              )}
               
               {activeTab === "subscribers" && (
                 <div className="p-6">
@@ -91,6 +113,30 @@ export default function AdminPage() {
             </div>
         </section>
       </div>
+      {showGuide && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-xl rounded-md bg-white p-5 shadow-lg">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-[color:var(--byu-blue)]">Welcome to the Admin Dashboard</h2>
+              <button onClick={closeGuide} aria-label="Close" className="px-2 py-1">✕</button>
+            </div>
+            <div className="mt-3 text-sm text-gray-700 space-y-2">
+              <p><strong>Templates</strong>: Pick a template, add AI News or extra info, then “Use This Template.”</p>
+              <p><strong>Compose Email</strong>: Edit subject/content, select audiences, and send (or test mode).</p>
+              <p><strong>Test Email</strong>: Send a one-off test to verify setup.</p>
+              <p><strong>Subscribers</strong>: Manage your subscriber lists.</p>
+              <p><strong>Audiences</strong>: Create and manage audience groups; optionally create in Resend.</p>
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={dontShowAgain} onChange={(e) => setDontShowAgain(e.target.checked)} />
+                <span>Don’t show again</span>
+              </label>
+              <button onClick={closeGuide} className="rounded-md bg-[color:var(--byu-blue)] px-4 py-2 text-white font-semibold">Got it</button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminAuth>
   );
 }
