@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const EMAIL_TEMPLATES = {
   event_announcement: {
@@ -150,6 +150,9 @@ export default function EmailTemplates({ onUseTemplate }) {
   const [refine, setRefine] = useState("");
   const [previewNews, setPreviewNews] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
+  const [audiences, setAudiences] = useState([]);
+  const [loadingAudiences, setLoadingAudiences] = useState(false);
+  const [selectedAudienceId, setSelectedAudienceId] = useState("");
 
   const handleTemplateSelect = (templateKey) => {
     setSelectedTemplate(templateKey);
@@ -209,33 +212,54 @@ export default function EmailTemplates({ onUseTemplate }) {
     setAdditionalInfo("");
   };
 
-  const NICHES = [
-    "AI in Healthcare",
-    "AI in Finance",
-    "AI in Marketing",
-    "AI in Accounting",
-    "AI in Supply Chain",
-    "AI in Education",
-  ];
+  async function fetchAudiences() {
+    try {
+      setLoadingAudiences(true);
+      const res = await fetch('/api/admin/audiences');
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.audiences)) {
+        setAudiences(data.audiences);
+      } else {
+        setAudiences([]);
+      }
+    } catch {
+      setAudiences([]);
+    } finally {
+      setLoadingAudiences(false);
+    }
+  }
+
+  useEffect(() => {
+    if (useAiNews && audiences.length === 0 && !loadingAudiences) {
+      fetchAudiences();
+    }
+  }, [useAiNews]);
 
   async function insertAiNews() {
-    if (!niche) {
-      alert("Please select a subgroup/niche");
-      return;
-    }
     setLoadingNews(true);
     try {
+      // Determine topic from selected audience, with fallback to general AI
+      const chosen = audiences.find(a => String(a.id) === String(selectedAudienceId));
+      let topic = "";
+      if (chosen) {
+        const lower = (chosen.name || "").toLowerCase();
+        topic = (lower.includes("etc") || lower.includes("general")) ? "general AI" : chosen.name;
+      } else if (niche) {
+        topic = niche;
+      } else {
+        topic = "general AI";
+      }
       const res = await fetch('/api/ai-news', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ niche, refine })
+        body: JSON.stringify({ niche: topic, refine })
       });
       const data = await res.json();
       if (!res.ok) {
         alert(data.error || 'Failed to fetch AI news');
         return;
       }
-      const newsBlock = `\n\n<h3>📰 ${niche} - Latest AI News</h3>\n${data.content.replace(/\n/g, '<br/>')}\n`;
+      const newsBlock = `\n\n<h3>📰 ${topic} - Latest AI News</h3>\n${data.content.replace(/\n/g, '<br/>')}\n`;
       setPreviewNews(newsBlock);
       // Try to fill NEWS placeholders if they exist, otherwise append
       const hasNewsPlaceholders = Object.keys(customFields).some(k => k.includes('NEWS'));
@@ -284,26 +308,29 @@ export default function EmailTemplates({ onUseTemplate }) {
 
         {selectedTemplate && (
           <div className="space-y-4">
-            {/* Toggle AI News, niche selector, refine, and actions */}
+            {/* Toggle AI News, audience selector, refine, and actions */}
             <div className="space-y-3">
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={useAiNews} onChange={(e) => setUseAiNews(e.target.checked)} />
-                <span>Include AI News per audience</span>
+                <span className="text-lg font-semibold text-[color:var(--byu-blue)]">Include AI News</span>
               </label>
               {useAiNews && (
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Select subgroup/niche</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Select audience</label>
                     <select
-                      value={niche}
-                      onChange={(e) => setNiche(e.target.value)}
+                      value={selectedAudienceId}
+                      onChange={(e) => setSelectedAudienceId(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[color:var(--byu-blue)]"
                     >
-                      <option value="">Choose a niche...</option>
-                      {NICHES.map(n => (
-                        <option key={n} value={n}>{n}</option>
+                      <option value="">Choose an audience...</option>
+                      {audiences.map(a => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
                       ))}
                     </select>
+                    {loadingAudiences && (
+                      <p className="text-xs text-gray-500 mt-1">Loading audiences…</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Optional refine prompt</label>
