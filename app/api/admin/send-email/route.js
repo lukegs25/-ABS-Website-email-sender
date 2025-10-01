@@ -43,10 +43,19 @@ export async function POST(request) {
       }, { status: 500 });
     }
 
+    // Load audience metadata from Supabase
+    const { data: audienceRows } = await supabase
+      .from('audiences')
+      .select('id, name, resend_id')
+      .in('id', audienceIds);
+
+    const idToAudience = new Map();
+    (audienceRows || []).forEach(r => idToAudience.set(r.id, r));
+
     const results = [];
     
     for (const audienceId of audienceIds) {
-      const audienceInfo = AUDIENCE_MAP[audienceId];
+      const audienceInfo = idToAudience.get(audienceId);
       if (!audienceInfo) {
         results.push({
           audienceId,
@@ -110,7 +119,7 @@ export async function POST(request) {
         } else {
           // Production mode - send to Resend audience
           const { data, error: sendError } = await resend.broadcast.send({
-            audienceId: audienceInfo.resendId,
+            audienceId: audienceInfo.resend_id,
             from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
             subject: subject,
             html: `
@@ -171,49 +180,29 @@ export async function POST(request) {
 
 export async function GET() {
   const supabase = getSupabaseServerClient();
-
-  // Helper to build a fallback audiences list with zero counts
-  const buildFallback = () => {
-    const audiences = Object.entries(AUDIENCE_MAP).map(([id, info]) => ({
-      id: parseInt(id),
-      name: info.name,
-      subscriberCount: 0
-    }));
-    return NextResponse.json({ audiences, totalSubscribers: 0 });
-  };
-
   if (!supabase) {
-    // Return fallback so UI can still render selector
-    return buildFallback();
+    return NextResponse.json({ audiences: [], totalSubscribers: 0 });
   }
 
   try {
-    // Get subscriber counts for each audience
-    const { data, error } = await supabase
+    const { data: rows } = await supabase
+      .from('audiences')
+      .select('id, name');
+
+    const { data: subs } = await supabase
       .from('new_subscribers')
       .select('audience_id');
 
-    if (error) throw error;
-
     const countMap = {};
-    data?.forEach(sub => {
+    subs?.forEach(sub => {
       countMap[sub.audience_id] = (countMap[sub.audience_id] || 0) + 1;
     });
 
-    // Build a union of known mapped audiences and any IDs found in Supabase
-    const knownIds = new Set(Object.keys(AUDIENCE_MAP).map(String));
-    const supabaseIds = new Set(Object.keys(countMap).map(String));
-    const allIds = new Set([...knownIds, ...supabaseIds]);
-
-    const audiences = Array.from(allIds).map((idStr) => {
-      const id = parseInt(idStr, 10);
-      const info = AUDIENCE_MAP[id];
-      return {
-        id,
-        name: info?.name || `Audience ${id}`,
-        subscriberCount: countMap[id] || 0
-      };
-    }).sort((a, b) => a.id - b.id);
+    const audiences = (rows || []).map(r => ({
+      id: r.id,
+      name: r.name,
+      subscriberCount: countMap[r.id] || 0
+    })).sort((a, b) => a.id - b.id);
 
     return NextResponse.json({
       audiences,
@@ -222,7 +211,6 @@ export async function GET() {
 
   } catch (error) {
     console.error('Error fetching audience data:', error);
-    // On error, still provide fallback audiences so UI works
-    return buildFallback();
+    return NextResponse.json({ audiences: [], totalSubscribers: 0 });
   }
 }
