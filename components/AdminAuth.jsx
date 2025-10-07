@@ -3,7 +3,9 @@ import { useState, useEffect } from "react";
 
 export default function AdminAuth({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -22,32 +24,23 @@ export default function AdminAuth({ children }) {
     checkAuth();
   }, []);
 
-  const setCookie = (name, value, days = 7) => {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-    
-    // Set cookie with proper attributes for both local and production
-    const cookieString = `${name}=${value}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-    document.cookie = cookieString;
-    
-    console.log('Set admin_auth cookie:', cookieString);
-  };
-
-  const handleAuth = (e) => {
+  const handleAuth = async (e) => {
     e.preventDefault();
-    // Simple password check - in production, use proper authentication
-    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "admin123";
-    
-    if (password === adminPassword) {
+    setError("");
+    try {
+      const res = await fetch('/api/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Login failed');
+        return;
+      }
       setIsAuthenticated(true);
-      setError("");
-      
-      // Set the admin_auth cookie that the API expects
-      setCookie('admin_auth', 'authenticated');
-      console.log('Admin authentication successful - cookie set');
-    } else {
-      setError("Invalid password");
-      setPassword("");
+    } catch (err) {
+      setError('Unexpected error');
     }
   };
 
@@ -62,19 +55,38 @@ export default function AdminAuth({ children }) {
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleAuth}>
             <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[color:var(--byu-blue)] focus:border-[color:var(--byu-blue)]"
+                placeholder="you@byu.edu"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
               <input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[color:var(--byu-blue)] focus:border-[color:var(--byu-blue)]"
                 placeholder="Enter admin password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+              <label className="mt-2 inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} />
+                <span>Show password</span>
+              </label>
             </div>
             {error && (
               <div className="text-red-600 text-sm text-center">{error}</div>
