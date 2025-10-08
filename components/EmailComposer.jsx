@@ -18,6 +18,7 @@ export default function EmailComposer({ initialData = {} }) {
   ];
 
   const [audiences, setAudiences] = useState([]);
+  const [filteredAudiences, setFilteredAudiences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [formData, setFormData] = useState({
@@ -42,6 +43,34 @@ export default function EmailComposer({ initialData = {} }) {
   useEffect(() => {
     fetchAudiences();
   }, []);
+
+  // Filter audiences based on admin permissions
+  useEffect(() => {
+    if (!adminSession || audiences.length === 0) {
+      setFilteredAudiences([]);
+      return;
+    }
+
+    if (adminSession.isSuperAdmin) {
+      // Super admins can see all audiences
+      setFilteredAudiences(audiences);
+    } else {
+      // Regular admins can only see audiences that match their adminTypes
+      const allowedAudiences = audiences.filter(audience => {
+        return adminSession.adminTypes.some(adminType => 
+          audience.name.toLowerCase().includes(adminType.toLowerCase())
+        );
+      });
+      setFilteredAudiences(allowedAudiences);
+      
+      // Clear any selected audiences that are no longer available
+      const allowedIds = allowedAudiences.map(a => a.id);
+      setFormData(prev => ({
+        ...prev,
+        audienceIds: prev.audienceIds.filter(id => allowedIds.includes(id))
+      }));
+    }
+  }, [audiences, adminSession]);
 
   const fetchAudiences = async () => {
     try {
@@ -76,9 +105,9 @@ export default function EmailComposer({ initialData = {} }) {
   const handleSelectAll = () => {
     setFormData(prev => ({
       ...prev,
-      audienceIds: prev.audienceIds.length === audiences.length 
+      audienceIds: prev.audienceIds.length === filteredAudiences.length 
         ? [] 
-        : audiences.map(a => a.id)
+        : filteredAudiences.map(a => a.id)
     }));
   };
 
@@ -87,6 +116,14 @@ export default function EmailComposer({ initialData = {} }) {
     
     if (formData.audienceIds.length === 0) {
       alert('Please select at least one audience');
+      return;
+    }
+
+    // Validate that all selected audiences are in the filtered list (security check)
+    const allowedAudienceIds = filteredAudiences.map(a => a.id);
+    const invalidSelections = formData.audienceIds.filter(id => !allowedAudienceIds.includes(id));
+    if (invalidSelections.length > 0) {
+      alert('You do not have permission to send to some of the selected audiences. Please refresh and try again.');
       return;
     }
 
@@ -202,12 +239,12 @@ export default function EmailComposer({ initialData = {} }) {
               onClick={handleSelectAll}
               className="text-sm text-[color:var(--byu-blue)] hover:underline"
             >
-              {formData.audienceIds.length === audiences.length ? 'Deselect All' : 'Select All'}
+              {formData.audienceIds.length === filteredAudiences.length ? 'Deselect All' : 'Select All'}
             </button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 border border-gray-200 rounded-md">
-            {audiences.map((audience) => (
+            {filteredAudiences.map((audience) => (
               <label key={audience.id} className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -221,9 +258,17 @@ export default function EmailComposer({ initialData = {} }) {
                 </span>
               </label>
             ))}
+            {filteredAudiences.length === 0 && !loading && (
+              <div className="col-span-2 text-center text-gray-500 py-4">
+                {adminSession && !adminSession.isSuperAdmin 
+                  ? "No audiences available for your admin type." 
+                  : "No audiences available."
+                }
+              </div>
+            )}
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            Selected: {formData.audienceIds.length} audience{formData.audienceIds.length !== 1 ? 's' : ''}
+            Selected: {formData.audienceIds.length} audience{formData.audienceIds.length !== 1 ? 's' : ''} out of {filteredAudiences.length} available
           </p>
         </div>
 
