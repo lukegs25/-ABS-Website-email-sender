@@ -27,7 +27,6 @@ export default function AdminAuth({ children }) {
           return;
         }
         const data = await res.json();
-        console.log(data)
         let adminTypes = [];
         if (Array.isArray(data.admin_type)) {
           adminTypes = data.admin_type;
@@ -46,8 +45,6 @@ export default function AdminAuth({ children }) {
             adminTypes = data.admin_type.split(',').map(type => type.trim());
           }
         }
-        console.log("Admin types:", adminTypes);
-        console.log("isSuperAdmin:", adminTypes.includes('SuperAdmin'));
         setAdminSession({
           email: data.email,
           admin_type: data.admin_type,
