@@ -4,19 +4,6 @@ import { useAdmin } from "./AdminAuth";
 
 export default function EmailComposer({ initialData = {} }) {
   const adminSession = useAdmin();
-  
-  const DEFAULT_AUDIENCES = [
-    { id: 8, name: "AI in Business (main)", subscriberCount: 0 },
-    { id: 7, name: "SCAI - Students", subscriberCount: 0 },
-    { id: 6, name: "Finance", subscriberCount: 0 },
-    { id: 5, name: "Marketing", subscriberCount: 0 },
-    { id: 4, name: "Semi-conductors", subscriberCount: 0 },
-    { id: 9, name: "Accounting", subscriberCount: 0 },
-    { id: 3, name: "Etc/general", subscriberCount: 0 },
-    { id: 1, name: "SCAI - Teachers", subscriberCount: 0 },
-    { id: 2, name: "Teachers supporting student group", subscriberCount: 0 }
-  ];
-
   const [audiences, setAudiences] = useState([]);
   const [filteredAudiences, setFilteredAudiences] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,19 +62,16 @@ export default function EmailComposer({ initialData = {} }) {
   const fetchAudiences = async () => {
     try {
       const response = await fetch('/api/admin/send-email');
+      const data = await response.json();
       if (response.ok) {
-        const data = await response.json();
-        if (data && Array.isArray(data.audiences) && data.audiences.length > 0) {
-          setAudiences(data.audiences);
+        if (data && data.audiences !== undefined) {
+          setAudiences(data.audiences || []);
         } else {
-          setAudiences(DEFAULT_AUDIENCES);
+          setAudiences([]);
         }
-      } else {
-        setAudiences(DEFAULT_AUDIENCES);
       }
     } catch (error) {
       console.error('Error fetching audiences:', error);
-      setAudiences(DEFAULT_AUDIENCES);
     } finally {
       setLoading(false);
     }
