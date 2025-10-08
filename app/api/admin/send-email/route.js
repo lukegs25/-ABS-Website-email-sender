@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getResendClient } from "@/lib/resend";
 import { getSupabaseServerClient } from "@/lib/supabase";
+import { getAdminSession, filterAudiencesByAdmin, filterAudienceIdsFromRows } from "@/lib/auth-helpers";
 
 // Audience ID mappings from resend_sample.txt
 const AUDIENCE_MAP = {
@@ -17,6 +18,14 @@ const AUDIENCE_MAP = {
 
 export async function POST(request) {
   try {
+    // Check admin authentication and permissions
+    const session = await getAdminSession();
+    if (!session) {
+      return NextResponse.json({ 
+        error: "Unauthorized - Admin authentication required" 
+      }, { status: 401 });
+    }
+
     const body = await request.json();
     const { subject, content, audienceIds, fromName = "AI in Business Society", testMode = false } = body;
 
@@ -25,6 +34,33 @@ export async function POST(request) {
       return NextResponse.json({ 
         error: "Missing required fields: subject, content, and audienceIds" 
       }, { status: 400 });
+    }
+
+    // Load audience metadata for requested IDs
+    const supabase = getSupabaseServerClient();
+    if (!supabase) {
+      return NextResponse.json({ 
+        error: "Database connection not available" 
+      }, { status: 500 });
+    }
+
+    const { data: requestedAudienceRows } = await supabase
+      .from('audiences')
+      .select('id, name, resend_id')
+      .in('id', audienceIds);
+
+    // Determine allowed audience IDs based on tokens (IDs or names)
+    const allowedAudienceIds = filterAudienceIdsFromRows(session, requestedAudienceRows);
+
+    if (!allowedAudienceIds || allowedAudienceIds.length === 0) {
+      return NextResponse.json({ 
+        error: "You do not have permission to send to any of the selected audiences" 
+      }, { status: 403 });
+    }
+
+    // Warn if some audiences were filtered out
+    if (allowedAudienceIds.length < audienceIds.length) {
+      console.log(`Admin ${session.email} attempted to send to unauthorized audiences. Filtered from ${audienceIds.length} to ${allowedAudienceIds.length}`);
     }
 
     const resend = getResendClient();
@@ -36,25 +72,18 @@ export async function POST(request) {
       });
     }
 
-    const supabase = getSupabaseServerClient();
-    if (!supabase) {
-      return NextResponse.json({ 
-        error: "Database connection not available" 
-      }, { status: 500 });
-    }
-
-    // Load audience metadata from Supabase
+    // Load audience metadata from Supabase (only allowed audiences)
     const { data: audienceRows } = await supabase
       .from('audiences')
       .select('id, name, resend_id')
-      .in('id', audienceIds);
+      .in('id', allowedAudienceIds);
 
     const idToAudience = new Map();
     (audienceRows || []).forEach(r => idToAudience.set(r.id, r));
 
     const results = [];
     
-    for (const audienceId of audienceIds) {
+    for (const audienceId of allowedAudienceIds) {
       const audienceInfo = idToAudience.get(audienceId);
       if (!audienceInfo) {
         results.push({
@@ -179,6 +208,16 @@ export async function POST(request) {
 }
 
 export async function GET() {
+  // Check admin authentication and permissions
+  const session = await getAdminSession();
+  if (!session) {
+    return NextResponse.json({ 
+      error: "Unauthorized - Admin authentication required",
+      audiences: [], 
+      totalSubscribers: 0 
+    }, { status: 401 });
+  }
+
   const supabase = getSupabaseServerClient();
   if (!supabase) {
     return NextResponse.json({ audiences: [], totalSubscribers: 0 });
@@ -198,11 +237,14 @@ export async function GET() {
       countMap[sub.audience_id] = (countMap[sub.audience_id] || 0) + 1;
     });
 
-    const audiences = (rows || []).map(r => ({
+    let audiences = (rows || []).map(r => ({
       id: r.id,
       name: r.name,
       subscriberCount: countMap[r.id] || 0
     })).sort((a, b) => a.id - b.id);
+
+    // Filter audiences by admin tokens (IDs or names)
+    audiences = filterAudiencesByAdmin(session, audiences);
 
     return NextResponse.json({
       audiences,

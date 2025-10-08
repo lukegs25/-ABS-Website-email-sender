@@ -1,7 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useAdmin } from "./AdminAuth";
 
 export default function EmailComposer({ initialData = {} }) {
+  const adminSession = useAdmin();
+  
   const DEFAULT_AUDIENCES = [
     { id: 8, name: "AI in Business (main)", subscriberCount: 0 },
     { id: 7, name: "SCAI - Students", subscriberCount: 0 },
@@ -188,6 +191,11 @@ export default function EmailComposer({ initialData = {} }) {
           <div className="flex justify-between items-center mb-3">
             <label className="block text-sm font-medium text-gray-700">
               Select Audiences
+              {adminSession && !adminSession.isSuperAdmin && (
+                <span className="ml-2 text-xs text-gray-500 font-normal">
+                  (Showing only your assigned audiences)
+                </span>
+              )}
             </label>
             <button
               type="button"

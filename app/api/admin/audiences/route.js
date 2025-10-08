@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { getResendClient } from "@/lib/resend";
+import { getAdminSession, isSuperAdmin } from "@/lib/auth-helpers";
 
 // Fallback built-in audiences
 const AUDIENCE_MAP = {
@@ -61,13 +62,17 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    // Require admin cookie
-    const cookieStore = await cookies();
-    const auth = cookieStore.get('admin_auth');
-    const skipAuth = process.env.SKIP_ADMIN_AUTH === 'true';
+    // Require SuperAdmin permissions
+    const session = await getAdminSession();
     
-    if (!auth && !skipAuth) {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized - Missing admin authentication' }, { status: 401 });
+    }
+
+    if (!isSuperAdmin(session)) {
+      return NextResponse.json({ 
+        error: 'Forbidden - Only SuperAdmin can manage audiences' 
+      }, { status: 403 });
     }
 
     const supabase = getSupabaseServerClient();

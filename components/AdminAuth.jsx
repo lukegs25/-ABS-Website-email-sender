@@ -1,23 +1,41 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
+
+// Create context for admin session
+const AdminContext = createContext(null);
+
+// Hook to use admin context
+export function useAdmin() {
+  return useContext(AdminContext);
+}
 
 export default function AdminAuth({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminSession, setAdminSession] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const checkAuth = () => {
-      const cookies = document.cookie.split(';');
-      const adminCookie = cookies.find(cookie => 
-        cookie.trim().startsWith('admin_auth=')
-      );
-      
-      if (adminCookie) {
-        console.log('Found existing admin_auth cookie');
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/admin-login', { method: 'GET' });
+        if (!res.ok) {
+          setIsAuthenticated(false);
+          setAdminSession(null);
+          return;
+        }
+        const data = await res.json();
+        setAdminSession({
+          email: data.email,
+          admin_type: data.admin_type,
+          isSuperAdmin: data.admin_type === 'SuperAdmin'
+        });
         setIsAuthenticated(true);
+      } catch (e) {
+        setIsAuthenticated(false);
+        setAdminSession(null);
       }
     };
     
@@ -38,6 +56,13 @@ export default function AdminAuth({ children }) {
         setError(data.error || 'Login failed');
         return;
       }
+      
+      // Set admin session from response
+      setAdminSession({
+        email: email.trim().toLowerCase(),
+        admin_type: data.admin_type,
+        isSuperAdmin: data.admin_type === 'SuperAdmin'
+      });
       setIsAuthenticated(true);
     } catch (err) {
       setError('Unexpected error');
@@ -105,5 +130,9 @@ export default function AdminAuth({ children }) {
     );
   }
 
-    return children;
+  return (
+    <AdminContext.Provider value={adminSession}>
+      {children}
+    </AdminContext.Provider>
+  );
 }

@@ -1,13 +1,14 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import AdminAuth from "@/components/AdminAuth";
+import AdminAuth, { useAdmin } from "@/components/AdminAuth";
 import EmailComposer from "@/components/EmailComposer";
 import SubscriberManager from "@/components/SubscriberManager";
 import EmailTemplates from "@/components/EmailTemplates";
 import AudienceManager from "@/components/AudienceManager";
 
-export default function AdminPage() {
+function AdminDashboard() {
+  const adminSession = useAdmin();
   const [activeTab, setActiveTab] = useState("templates");
   const [emailData, setEmailData] = useState({ subject: "", content: "" });
   const [showGuide, setShowGuide] = useState(false);
@@ -30,17 +31,24 @@ export default function AdminPage() {
     setActiveTab("compose");
   };
 
-  const tabs = [
+  // Filter tabs based on admin permissions
+  const allTabs = [
     { id: "templates", label: "Templates" },
     { id: "compose", label: "Compose Email" },
     { id: "test", label: "Test Email" },
     { id: "subscribers", label: "Subscribers" },
-    { id: "audiences", label: "Audiences" }
+    { id: "audiences", label: "Audiences", superAdminOnly: true }
   ];
 
+  const tabs = allTabs.filter(tab => {
+    if (tab.superAdminOnly && adminSession && !adminSession.isSuperAdmin) {
+      return false;
+    }
+    return true;
+  });
+
   return (
-    <AdminAuth>
-      <div className="relative bg-white min-h-screen">
+    <div className="relative bg-white min-h-screen">
         <div className="pointer-events-none absolute inset-0 z-0">
           <div className="absolute right-[-6rem] md:right-[-8rem] xl:right-[-14rem] 2xl:right-[-18rem] top-0 h-[80vh] w-1/2 min-w-[560px] md:min-w-[640px] xl:min-w-[780px]">
             <Image
@@ -57,7 +65,19 @@ export default function AdminPage() {
         <section className="relative z-10 py-8 pl-0 pr-8 sm:pl-0 sm:pr-12 lg:pl-0 lg:pr-24 xl:pr-40 2xl:pr-56 -ml-6 sm:-ml-6 lg:-ml-8 xl:-ml-10">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-[color:var(--byu-blue)]">Admin Dashboard</h1>
-            <p className="mt-2 text-gray-600">Manage email campaigns and subscriber lists for AI in Business Society</p>
+            <p className="mt-2 text-gray-600">
+              Manage email campaigns and subscriber lists for AI in Business Society
+              {adminSession && (
+                <span className="ml-2 text-sm">
+                  • Logged in as: <strong>{adminSession.email}</strong>
+                  {adminSession.isSuperAdmin ? (
+                    <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">SuperAdmin</span>
+                  ) : (
+                    <span className="ml-1 px-2 py-0.5 bg-gray-100 text-gray-800 rounded text-xs">Normal Admin</span>
+                  )}
+                </span>
+              )}
+            </p>
           </div>
 
             {/* Tab Navigation */}
@@ -112,7 +132,7 @@ export default function AdminPage() {
               )}
             </div>
         </section>
-      </div>
+      
       {showGuide && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40">
           <div className="w-full max-w-xl rounded-md bg-white p-5 shadow-lg">
@@ -137,6 +157,14 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <AdminAuth>
+      <AdminDashboard />
     </AdminAuth>
   );
 }
