@@ -71,9 +71,9 @@ function AdminDashboard() {
                 <span className="ml-2 text-sm">
                   • Logged in as: <strong>{adminSession.email}</strong>
                   {adminSession.isSuperAdmin ? (
-                    <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">SuperAdmin</span>
+                    <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">Super Admin</span>
                   ) : (
-                    <span className="ml-1 px-2 py-0.5 bg-gray-100 text-gray-800 rounded text-xs">Normal Admin</span>
+                    <span className="ml-1 px-2 py-0.5 bg-gray-100 text-gray-800 rounded text-xs">Admin</span>
                   )}
                 </span>
               )}

@@ -57,15 +57,15 @@ export async function POST(req) {
       return NextResponse.json({ error: "Database error" }, { status: 500 });
     }
 
-    // Robust admin_type parsing: allow JSON arrays, comma-separated strings, or single value
-    const hasAdminType = Object.prototype.hasOwnProperty.call(adminRow || {}, 'admin_type');
-    if (!adminRow || !adminRow.email || (hasAdminType && !adminRow.admin_type)) {
+    // Robust adminType parsing: allow JSON arrays, comma-separated strings, or single value
+    const hasAdminType = Object.prototype.hasOwnProperty.call(adminRow || {}, 'adminType');
+    if (!adminRow || !adminRow.email || (hasAdminType && !adminRow.adminType)) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     }
 
-    let adminTypeValue = adminRow.admin_type;
+    let adminTypeValue = adminRow.adminType;
     try {
-      // If admin_type is JSON (e.g., ["accounting"]) parse and join
+      // If adminType is JSON (e.g., ["accounting"]) parse and join
       if (typeof adminTypeValue === 'string' && adminTypeValue.trim().startsWith('[')) {
         const arr = JSON.parse(adminTypeValue);
         if (Array.isArray(arr)) {
@@ -75,11 +75,12 @@ export async function POST(req) {
     } catch {}
 
     const cookieStore = await cookies();
-    cookieStore.set('admin_auth', JSON.stringify({ 
+    const cookieData = { 
       email, 
       admin_type: adminTypeValue,
       t: Date.now() 
-    }), {
+    };
+    cookieStore.set('admin_auth', JSON.stringify(cookieData), {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
@@ -89,7 +90,7 @@ export async function POST(req) {
 
     return NextResponse.json({ 
       ok: true, 
-      admin_type: adminRow.admin_type 
+      admin_type: adminRow.adminType 
     });
   } catch (e) {
     return NextResponse.json({ error: "Unexpected error" }, { status: 500 });

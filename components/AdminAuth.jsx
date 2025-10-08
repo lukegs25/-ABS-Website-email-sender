@@ -27,13 +27,36 @@ export default function AdminAuth({ children }) {
           return;
         }
         const data = await res.json();
+        console.log(data)
+        let adminTypes = [];
+        if (Array.isArray(data.admin_type)) {
+          adminTypes = data.admin_type;
+        } else if (typeof data.admin_type === 'string') {
+          // Try to parse as JSON array first
+          try {
+            const parsed = JSON.parse(data.admin_type);
+            if (Array.isArray(parsed)) {
+              adminTypes = parsed;
+            } else {
+              // Split by comma if it's a comma-separated string
+              adminTypes = data.admin_type.split(',').map(type => type.trim());
+            }
+          } catch {
+            // Split by comma if it's a comma-separated string
+            adminTypes = data.admin_type.split(',').map(type => type.trim());
+          }
+        }
+        console.log("Admin types:", adminTypes);
+        console.log("isSuperAdmin:", adminTypes.includes('SuperAdmin'));
         setAdminSession({
           email: data.email,
           admin_type: data.admin_type,
-          isSuperAdmin: data.admin_type === 'SuperAdmin'
+          adminTypes: adminTypes,
+          isSuperAdmin: adminTypes.includes('SuperAdmin')
         });
         setIsAuthenticated(true);
       } catch (e) {
+        console.log("Error in checkAuth:", e);
         setIsAuthenticated(false);
         setAdminSession(null);
       }
@@ -57,11 +80,34 @@ export default function AdminAuth({ children }) {
         return;
       }
       
+      // Handle admin_type as array or string
+      let adminTypes = [];
+      if (Array.isArray(data.admin_type)) {
+        adminTypes = data.admin_type;
+      } else if (typeof data.admin_type === 'string') {
+        // Try to parse as JSON array first
+        try {
+          const parsed = JSON.parse(data.admin_type);
+          if (Array.isArray(parsed)) {
+            adminTypes = parsed;
+          } else {
+            // Split by comma if it's a comma-separated string
+            adminTypes = data.admin_type.split(',').map(type => type.trim());
+          }
+        } catch {
+          // Split by comma if it's a comma-separated string
+          adminTypes = data.admin_type.split(',').map(type => type.trim());
+        }
+      }
+      
+      console.log("Admin types from login:", adminTypes);
+      
       // Set admin session from response
       setAdminSession({
         email: email.trim().toLowerCase(),
         admin_type: data.admin_type,
-        isSuperAdmin: data.admin_type === 'SuperAdmin'
+        adminTypes: adminTypes,
+        isSuperAdmin: adminTypes.includes('SuperAdmin')
       });
       setIsAuthenticated(true);
     } catch (err) {
