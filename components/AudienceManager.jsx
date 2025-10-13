@@ -12,7 +12,9 @@ export default function AudienceManager() {
   async function loadAudiences() {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/audiences');
+      const res = await fetch('/api/admin/audiences', {
+        credentials: 'include'
+      });
       const data = await res.json();
       if (res.ok) {
         setAudiences(data.audiences || []);
@@ -43,6 +45,7 @@ export default function AudienceManager() {
       const res = await fetch('/api/admin/audiences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ name: form.name.trim(), createOnResend: form.createOnResend })
       });
       const data = await res.json();

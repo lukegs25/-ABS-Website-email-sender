@@ -77,7 +77,9 @@ export async function POST(req) {
 
     const supabase = getSupabaseServerClient();
     if (!supabase) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Database not configured - Cannot create new audiences without Supabase connection' 
+      }, { status: 500 });
     }
 
     const body = await req.json();
