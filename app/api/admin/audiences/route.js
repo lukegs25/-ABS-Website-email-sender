@@ -132,4 +132,131 @@ export async function POST(req) {
   }
 }
 
+export async function DELETE(req) {
+  try {
+    // Require SuperAdmin permissions
+    const session = await getAdminSession();
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized - Missing admin authentication' }, { status: 401 });
+    }
+
+    if (!isSuperAdmin(session)) {
+      return NextResponse.json({ 
+        error: 'Forbidden - Only SuperAdmin can delete audiences' 
+      }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { audienceId, audienceName, resendId } = body;
+
+    if (!audienceId) {
+      return NextResponse.json({ error: 'audienceId is required' }, { status: 400 });
+    }
+
+    // Prevent deletion of main ABS audience
+    if (audienceId === 8) {
+      return NextResponse.json({ 
+        error: 'Cannot delete the main ABS audience' 
+      }, { status: 400 });
+    }
+
+    const resend = getResendClient();
+    if (!resend) {
+      return NextResponse.json({ error: 'Resend API not configured' }, { status: 500 });
+    }
+
+    let migrationStats = {
+      totalInAudience: 0,
+      duplicates: 0,
+      migrated: 0,
+      errors: 0
+    };
+
+    // If there's a Resend ID, migrate emails to main ABS audience
+    if (resendId) {
+      try {
+        // Get main ABS audience (ID 8)
+        const { data: audiencesList } = await resend.audiences.list();
+        const mainABSAudience = audiencesList?.data?.find(a => a.name === "AI in Business (main)");
+        
+        if (!mainABSAudience) {
+          return NextResponse.json({ 
+            error: 'Main ABS audience not found in Resend' 
+          }, { status: 500 });
+        }
+
+        // Get contacts from the audience being deleted
+        const { data: targetContactsList } = await resend.contacts.list({
+          audienceId: resendId
+        });
+
+        const targetEmails = targetContactsList?.data?.map(c => c.email) || [];
+        migrationStats.totalInAudience = targetEmails.length;
+
+        if (targetEmails.length > 0) {
+          // Get contacts from main ABS audience
+          const { data: mainContactsList } = await resend.contacts.list({
+            audienceId: mainABSAudience.id
+          });
+
+          const mainEmails = new Set(mainContactsList?.data?.map(c => c.email) || []);
+
+          // Filter out duplicates
+          const emailsToMigrate = targetEmails.filter(email => !mainEmails.has(email));
+          migrationStats.duplicates = targetEmails.length - emailsToMigrate.length;
+
+          // Add non-duplicate emails to main ABS audience
+          for (const email of emailsToMigrate) {
+            try {
+              await resend.contacts.create({
+                email,
+                audienceId: mainABSAudience.id
+              });
+              migrationStats.migrated++;
+            } catch (addError) {
+              console.error(`Failed to migrate ${email}:`, addError);
+              migrationStats.errors++;
+            }
+          }
+        }
+
+        // Delete the audience from Resend
+        await resend.audiences.remove(resendId);
+      } catch (resendError) {
+        console.error('Resend API error during deletion:', resendError);
+        return NextResponse.json({ 
+          error: 'Failed to delete audience from Resend',
+          details: resendError.message 
+        }, { status: 502 });
+      }
+    }
+
+    // Remove from database
+    const supabase = getSupabaseServerClient();
+    if (supabase) {
+      try {
+        await supabase
+          .from('audiences')
+          .delete()
+          .eq('id', audienceId);
+      } catch (dbError) {
+        console.error('Database error during deletion:', dbError);
+        // Continue even if DB deletion fails
+      }
+    }
+
+    return NextResponse.json({ 
+      ok: true, 
+      audienceName,
+      migrationStats
+    });
+  } catch (e) {
+    console.error('Unexpected error in DELETE /api/admin/audiences:', e);
+    return NextResponse.json({ 
+      error: 'Unexpected error',
+      details: e.message 
+    }, { status: 500 });
+  }
+}
 

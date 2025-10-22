@@ -1,14 +1,15 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { subscriberSchema, scaiLeadSchema } from "@/lib/validators";
-import { defaultSubgroups, exampleMajors } from "@/lib/constants";
+import { exampleMajors } from "@/lib/constants";
 import { createClient } from "@/utils/supabase/client";
 
 export default function TeacherForm() {
   const [submitting, setSubmitting] = useState(false);
   const [showScai, setShowScai] = useState(false);
+  const [availableSubgroups, setAvailableSubgroups] = useState([]);
 
   const {
     register,
@@ -34,6 +35,61 @@ export default function TeacherForm() {
   const selectedMajor = watch("major");
   const wantsOtherAreas = watch("notifyNewMajorsOrSubgroups");
 
+  // Fetch available audiences on mount
+  useEffect(() => {
+    async function fetchAudiences() {
+      try {
+        const response = await fetch('/api/audiences');
+        const data = await response.json();
+        
+        if (data.audiences) {
+          // Map audiences to subgroups for teacher form (excluding SCAI students)
+          const subgroups = data.audiences
+            .filter(aud => {
+              const nameLower = aud.name.toLowerCase();
+              // Include audiences relevant to teachers, exclude SCAI students
+              return (
+                (nameLower.includes('finance') ||
+                nameLower.includes('marketing') ||
+                nameLower.includes('semi') || nameLower.includes('conductor') ||
+                nameLower.includes('accounting')) &&
+                !(nameLower.includes('scai') && nameLower.includes('student'))
+              );
+            })
+            .map(aud => {
+              const nameLower = aud.name.toLowerCase();
+              let id = null;
+              let name = aud.name;
+              
+              if (nameLower.includes('finance')) {
+                id = 'finance';
+                name = 'Finance';
+              } else if (nameLower.includes('marketing')) {
+                id = 'marketing';
+                name = 'Marketing';
+              } else if (nameLower.includes('semi') || nameLower.includes('conductor')) {
+                id = 'semi_conductor';
+                name = 'Semi-Conductors';
+              } else if (nameLower.includes('accounting')) {
+                id = 'accounting';
+                name = 'Accounting';
+              }
+              
+              return { id, name, audienceId: aud.id };
+            })
+            .filter(sg => sg.id !== null);
+          
+          setAvailableSubgroups(subgroups);
+        }
+      } catch (error) {
+        console.error('Error fetching audiences:', error);
+        setAvailableSubgroups([]);
+      }
+    }
+    
+    fetchAudiences();
+  }, []);
+
   async function onSubmit(values) {
     setSubmitting(true);
     try {
@@ -47,24 +103,57 @@ export default function TeacherForm() {
       // Determine user's major/department
       const userMajor = major === 'Other' ? otherMajor : major;
       
+      // Fetch all audiences to get IDs dynamically
+      const response = await fetch('/api/audiences');
+      const data = await response.json();
+      const allAudiences = data.audiences || [];
+      
+      // Helper to find audience ID by name pattern
+      const findAudienceId = (namePattern) => {
+        const aud = allAudiences.find(a => 
+          a.name.toLowerCase().includes(namePattern.toLowerCase())
+        );
+        return aud?.id;
+      };
+      
       // Main AI in Business newsletter
-      if (mainOptIn) audiences.push(8); // ai-in-business-main
+      if (mainOptIn) {
+        const mainId = findAudienceId('ai in business') || findAudienceId('main');
+        if (mainId) audiences.push(mainId);
+      }
       
       // SCAI program for teachers
-      if (scaiOptIn) audiences.push(1); // scai-teachers
+      if (scaiOptIn) {
+        const scaiTeacherId = findAudienceId('scai') && allAudiences.find(a => 
+          a.name.toLowerCase().includes('scai') && a.name.toLowerCase().includes('teacher')
+        )?.id;
+        if (scaiTeacherId) audiences.push(scaiTeacherId);
+      }
       
       // Teachers supporting student groups
-      if (advisorInterest) audiences.push(2); // teachers-supporting-student-group
+      if (advisorInterest) {
+        const advisorId = allAudiences.find(a => {
+          const nameLower = a.name.toLowerCase();
+          return (nameLower.includes('teacher') && nameLower.includes('support')) || 
+                 (nameLower.includes('advisor'));
+        })?.id;
+        if (advisorId) audiences.push(advisorId);
+      }
       
-      // Special interest groups
-      if (subgroups?.includes('marketing')) audiences.push(5); // marketing
-      if (subgroups?.includes('finance')) audiences.push(6); // finance
-      if (subgroups?.includes('semi_conductor')) audiences.push(4); // semi-conductors
-      if (subgroups?.includes('accounting')) audiences.push(9); // accounting
+      // Special interest groups - map selected subgroups to audience IDs
+      if (subgroups && subgroups.length > 0) {
+        subgroups.forEach(subgroupId => {
+          const subgroup = availableSubgroups.find(sg => sg.id === subgroupId);
+          if (subgroup && subgroup.audienceId) {
+            audiences.push(subgroup.audienceId);
+          }
+        });
+      }
 
       // Handle "other areas" interest
       if (notifyNewMajorsOrSubgroups && otherAreasInterest?.trim()) {
-        audiences.push(3); // etc audience
+        const etcId = findAudienceId('etc') || findAudienceId('general') || findAudienceId('other');
+        if (etcId) audiences.push(etcId);
       }
 
       if (audiences.length === 0) throw new Error("Please select at least one newsletter");
@@ -210,12 +299,16 @@ export default function TeacherForm() {
         <fieldset>
           <legend className="text-sm font-medium">I want to hear about groups focused on AI in these areas:</legend>
           <div className="mt-2 grid grid-cols-1 gap-1">
-            {defaultSubgroups.filter((s) => s.id !== 'scai').map((s) => (
-              <label key={s.id} className="flex items-center gap-2">
-                <input type="checkbox" value={s.id} {...register("subgroups")} />
-                <span>{s.name}</span>
-              </label>
-            ))}
+            {availableSubgroups.length > 0 ? (
+              availableSubgroups.map((s) => (
+                <label key={s.id} className="flex items-center gap-2">
+                  <input type="checkbox" value={s.id} {...register("subgroups")} />
+                  <span>{s.name}</span>
+                </label>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">Loading available groups...</p>
+            )}
           </div>
         </fieldset>
 

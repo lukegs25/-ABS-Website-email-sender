@@ -1,13 +1,14 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { subscriberSchema } from "@/lib/validators";
-import { defaultSubgroups, exampleMajors } from "@/lib/constants";
+import { exampleMajors } from "@/lib/constants";
 import { createClient } from "@/utils/supabase/client";
 
 export default function StudentForm() {
   const [submitting, setSubmitting] = useState(false);
+  const [availableSubgroups, setAvailableSubgroups] = useState([]);
   const {
     register,
     handleSubmit,
@@ -30,6 +31,65 @@ export default function StudentForm() {
   const selectedMajor = watch("major");
   const wantsOtherAreas = watch("notifyNewMajorsOrSubgroups");
 
+  // Fetch available audiences on mount
+  useEffect(() => {
+    async function fetchAudiences() {
+      try {
+        const response = await fetch('/api/audiences');
+        const data = await response.json();
+        
+        if (data.audiences) {
+          // Map audiences to subgroups for student form
+          const subgroups = data.audiences
+            .filter(aud => {
+              const nameLower = aud.name.toLowerCase();
+              // Include audiences relevant to students
+              return (
+                nameLower.includes('scai') && nameLower.includes('student') ||
+                nameLower.includes('finance') ||
+                nameLower.includes('marketing') ||
+                nameLower.includes('semi') || nameLower.includes('conductor') ||
+                nameLower.includes('accounting')
+              );
+            })
+            .map(aud => {
+              const nameLower = aud.name.toLowerCase();
+              let id = null;
+              let name = aud.name;
+              
+              if (nameLower.includes('scai') && nameLower.includes('student')) {
+                id = 'scai';
+                name = 'Students Consultanting teachers on AI (SCAI)';
+              } else if (nameLower.includes('finance')) {
+                id = 'finance';
+                name = 'Finance';
+              } else if (nameLower.includes('marketing')) {
+                id = 'marketing';
+                name = 'Marketing';
+              } else if (nameLower.includes('semi') || nameLower.includes('conductor')) {
+                id = 'semi_conductor';
+                name = 'Semi-Conductors';
+              } else if (nameLower.includes('accounting')) {
+                id = 'accounting';
+                name = 'Accounting';
+              }
+              
+              return { id, name, audienceId: aud.id };
+            })
+            .filter(sg => sg.id !== null);
+          
+          setAvailableSubgroups(subgroups);
+        }
+      } catch (error) {
+        console.error('Error fetching audiences:', error);
+        // Fallback to empty array if fetch fails
+        setAvailableSubgroups([]);
+      }
+    }
+    
+    fetchAudiences();
+  }, []);
+
   async function onSubmit(values) {
     setSubmitting(true);
     try {
@@ -43,19 +103,39 @@ export default function StudentForm() {
       // Determine user's major
       const userMajor = major === 'Other' ? otherMajor : major;
       
-      // Main AI in Business newsletter
-      if (mainOptIn) audiences.push(8); // ai-in-business-main
+      // Fetch all audiences to get IDs dynamically
+      const response = await fetch('/api/audiences');
+      const data = await response.json();
+      const allAudiences = data.audiences || [];
       
-      // Special interest groups
-      if (subgroups?.includes('scai')) audiences.push(7); // scai-students
-      if (subgroups?.includes('marketing')) audiences.push(5); // marketing
-      if (subgroups?.includes('finance')) audiences.push(6); // finance
-      if (subgroups?.includes('semi_conductor')) audiences.push(4); // semi-conductors
-      if (subgroups?.includes('accounting')) audiences.push(9); // accounting
+      // Helper to find audience ID by name pattern
+      const findAudienceId = (namePattern) => {
+        const aud = allAudiences.find(a => 
+          a.name.toLowerCase().includes(namePattern.toLowerCase())
+        );
+        return aud?.id;
+      };
+      
+      // Main AI in Business newsletter
+      if (mainOptIn) {
+        const mainId = findAudienceId('ai in business') || findAudienceId('main');
+        if (mainId) audiences.push(mainId);
+      }
+      
+      // Special interest groups - map selected subgroups to audience IDs
+      if (subgroups && subgroups.length > 0) {
+        subgroups.forEach(subgroupId => {
+          const subgroup = availableSubgroups.find(sg => sg.id === subgroupId);
+          if (subgroup && subgroup.audienceId) {
+            audiences.push(subgroup.audienceId);
+          }
+        });
+      }
 
       // Handle "other areas" interest
       if (notifyNewMajorsOrSubgroups && otherAreasInterest?.trim()) {
-        audiences.push(3); // etc audience
+        const etcId = findAudienceId('etc') || findAudienceId('general') || findAudienceId('other');
+        if (etcId) audiences.push(etcId);
       }
 
       if (audiences.length === 0) throw new Error("Please select at least one newsletter");
@@ -142,12 +222,16 @@ export default function StudentForm() {
       <fieldset>
         <legend className="text-sm font-medium">I am interested in student groups focused on AI in these topics:</legend>
         <div className="mt-2 grid grid-cols-1 gap-1">
-          {defaultSubgroups.map((s) => (
-            <label key={s.id} className="flex items-center gap-2">
-              <input type="checkbox" value={s.id} {...register("subgroups")} />
-              <span>{s.name}</span>
-            </label>
-          ))}
+          {availableSubgroups.length > 0 ? (
+            availableSubgroups.map((s) => (
+              <label key={s.id} className="flex items-center gap-2">
+                <input type="checkbox" value={s.id} {...register("subgroups")} />
+                <span>{s.name}</span>
+              </label>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">Loading available groups...</p>
+          )}
         </div>
       </fieldset>
 

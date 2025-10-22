@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useAdmin } from "./AdminAuth";
+import { AttachmentUpload } from "./ui/attachment-upload";
 
 export default function EmailComposer({ initialData = {} }) {
   const adminSession = useAdmin();
@@ -14,6 +15,7 @@ export default function EmailComposer({ initialData = {} }) {
     audienceIds: [],
     fromName: "AI in Business Society"
   });
+  const [attachments, setAttachments] = useState([]);
   const [results, setResults] = useState(null);
 
   // Update form data when initialData changes
@@ -95,6 +97,25 @@ export default function EmailComposer({ initialData = {} }) {
     }));
   };
 
+  const convertFilesToBase64 = async (files) => {
+    const promises = files.map(file => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result.split(',')[1]; // Remove data URL prefix
+          resolve({
+            filename: file.name,
+            content: base64,
+            type: file.type
+          });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    });
+    return Promise.all(promises);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -120,12 +141,20 @@ export default function EmailComposer({ initialData = {} }) {
     setResults(null);
 
     try {
+      // Convert attachments to base64
+      const attachmentData = attachments.length > 0 
+        ? await convertFilesToBase64(attachments)
+        : [];
+
       const response = await fetch('/api/admin/send-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          attachments: attachmentData
+        }),
       });
 
       const data = await response.json();
@@ -140,6 +169,7 @@ export default function EmailComposer({ initialData = {} }) {
             content: "",
             audienceIds: []
           }));
+          setAttachments([]);
         }
       } else {
         alert(`Error: ${data.error}`);
@@ -205,6 +235,17 @@ export default function EmailComposer({ initialData = {} }) {
           <p className="text-sm text-gray-500 mt-1">
             Tip: Use HTML tags like &lt;p&gt;, &lt;h2&gt;, &lt;strong&gt;, &lt;a href=""&gt; for formatting
           </p>
+        </div>
+
+        {/* Attachments */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Attachments (Optional)
+          </label>
+          <AttachmentUpload 
+            files={attachments}
+            onChange={setAttachments}
+          />
         </div>
 
         {/* Audience Selection */}

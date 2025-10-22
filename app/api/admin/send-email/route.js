@@ -27,7 +27,7 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { subject, content, audienceIds, fromName = "AI in Business Society", testMode = false } = body;
+    const { subject, content, audienceIds, fromName = "AI in Business Society", testMode = false, attachments = [] } = body;
 
     // Basic validation
     if (!subject || !content || !audienceIds || !Array.isArray(audienceIds) || audienceIds.length === 0) {
@@ -106,7 +106,9 @@ export async function POST(request) {
 
           if (subscribers && subscribers.length > 0) {
             const emails = subscribers.map(s => s.email);
-            const { data, error: sendError } = await resend.emails.send({
+            
+            // Prepare email payload
+            const emailPayload = {
               from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
               to: emails,
               subject: `[TEST] ${subject}`,
@@ -126,7 +128,14 @@ export async function POST(request) {
                   </div>
                 </div>
               `,
-            });
+            };
+            
+            // Add attachments if present
+            if (attachments && attachments.length > 0) {
+              emailPayload.attachments = attachments;
+            }
+            
+            const { data, error: sendError } = await resend.emails.send(emailPayload);
 
             if (sendError) throw sendError;
 
@@ -147,7 +156,7 @@ export async function POST(request) {
           }
         } else {
           // Production mode - send to Resend audience
-          const { data, error: sendError } = await resend.broadcast.send({
+          const broadcastPayload = {
             audienceId: audienceInfo.resend_id,
             from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
             subject: subject,
@@ -164,7 +173,14 @@ export async function POST(request) {
                 </div>
               </div>
             `,
-          });
+          };
+          
+          // Add attachments if present
+          if (attachments && attachments.length > 0) {
+            broadcastPayload.attachments = attachments;
+          }
+          
+          const { data, error: sendError } = await resend.broadcast.send(broadcastPayload);
 
           if (sendError) throw sendError;
 
