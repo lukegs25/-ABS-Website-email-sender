@@ -43,41 +43,22 @@ export default function TeacherForm() {
         const data = await response.json();
         
         if (data.audiences) {
-          // Map audiences to subgroups for teacher form (excluding SCAI students)
+          // Map all audiences to subgroups for teacher form
+          // Exclude main audience and SCAI (shown as separate checkboxes)
           const subgroups = data.audiences
             .filter(aud => {
               const nameLower = aud.name.toLowerCase();
-              // Include audiences relevant to teachers, exclude SCAI students
-              return (
-                (nameLower.includes('finance') ||
-                nameLower.includes('marketing') ||
-                nameLower.includes('semi') || nameLower.includes('conductor') ||
-                nameLower.includes('accounting')) &&
-                !(nameLower.includes('scai') && nameLower.includes('student'))
-              );
+              // Exclude main audience and SCAI teacher audience (shown as separate checkboxes)
+              return !nameLower.includes('ai in business') && 
+                     !nameLower.includes('ai-in-business-main') &&
+                     !nameLower.includes('main') &&
+                     !(nameLower.includes('scai') && nameLower.includes('teacher'));
             })
-            .map(aud => {
-              const nameLower = aud.name.toLowerCase();
-              let id = null;
-              let name = aud.name;
-              
-              if (nameLower.includes('finance')) {
-                id = 'finance';
-                name = 'Finance';
-              } else if (nameLower.includes('marketing')) {
-                id = 'marketing';
-                name = 'Marketing';
-              } else if (nameLower.includes('semi') || nameLower.includes('conductor')) {
-                id = 'semi_conductor';
-                name = 'Semi-Conductors';
-              } else if (nameLower.includes('accounting')) {
-                id = 'accounting';
-                name = 'Accounting';
-              }
-              
-              return { id, name, audienceId: aud.id };
-            })
-            .filter(sg => sg.id !== null);
+            .map(aud => ({
+              id: aud.id.toString(),
+              name: aud.name,
+              audienceId: aud.id
+            }));
           
           setAvailableSubgroups(subgroups);
         }
