@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAdmin } from "./AdminAuth";
 
 export default function AudienceManager() {
-  const { session: adminSession } = useAdmin();
+  const adminSession = useAdmin();
   const [audiences, setAudiences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
