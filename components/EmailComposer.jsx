@@ -208,6 +208,9 @@ export default function EmailComposer({ initialData = {} }) {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Subject Line
+            <span className="text-xs font-normal text-gray-500 ml-2">
+              ✏️ Editable
+            </span>
           </label>
           <input
             type="text"
@@ -222,18 +225,22 @@ export default function EmailComposer({ initialData = {} }) {
         {/* Content */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email Content (HTML supported)
+            Email Content (HTML supported) 
+            <span className="text-xs font-normal text-gray-500 ml-2">
+              ✏️ Fully editable - edit the template content below as needed
+            </span>
           </label>
           <textarea
             value={formData.content}
             onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
             rows={12}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[color:var(--byu-blue)]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[color:var(--byu-blue)] font-mono text-sm"
             placeholder="Enter your email content here. You can use HTML tags for formatting..."
             required
           />
           <p className="text-sm text-gray-500 mt-1">
-            Tip: Use HTML tags like &lt;p&gt;, &lt;h2&gt;, &lt;strong&gt;, &lt;a href=""&gt; for formatting
+            💡 <strong>Tips:</strong> You can manually edit any template content above. Use HTML tags like &lt;p&gt;, &lt;h2&gt;, &lt;strong&gt;, &lt;a href=""&gt; for formatting. 
+            Look for <span className="font-semibold">(Fill in: ...)</span> placeholders and replace them with your content.
           </p>
         </div>
 
