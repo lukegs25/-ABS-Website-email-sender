@@ -6,7 +6,7 @@ const EMAIL_TEMPLATES = {
     name: "Event Announcement",
     subject: "Upcoming ABS Event: [EVENT_NAME]",
     content: `
-<h2>You're Invited: [EVENT_NAME]</h2>
+<h2>[EVENT_NAME]</h2>
 
 <p>Join us for an exciting AI in Business Society event!</p>
 
