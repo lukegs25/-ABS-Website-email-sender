@@ -17,14 +17,6 @@ const EMAIL_TEMPLATES = {
 <h3>What to Expect:</h3>
 <p>[EVENT_DESCRIPTION]</p>
 
-<p><strong>Who Should Attend:</strong> [TARGET_AUDIENCE]</p>
-
-<p>
-  <a href="[REGISTRATION_LINK]" style="background-color: #002e5d; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-    Register Now
-  </a>
-</p>
-
 <p>Questions? Reply to this email or contact us.</p>
 
 <p>See you there!<br>
