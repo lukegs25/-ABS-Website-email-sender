@@ -240,11 +240,17 @@ export default function AudienceManager() {
                   <p className="text-green-800 font-semibold mb-2">✅ Audience deleted successfully!</p>
                   
                   <div className="text-sm text-green-700 space-y-1">
-                    <p>📊 Total subscribers in audience: <strong>{deleteResult.totalInAudience}</strong></p>
-                    <p>✨ Migrated to main ABS: <strong>{deleteResult.migrated}</strong></p>
-                    <p>🔄 Duplicates skipped: <strong>{deleteResult.duplicates}</strong></p>
-                    {deleteResult.errors > 0 && (
-                      <p className="text-orange-600">⚠️ Errors: <strong>{deleteResult.errors}</strong></p>
+                    {deleteResult.skipped ? (
+                      <p className="text-blue-700">ℹ️ {deleteResult.message}</p>
+                    ) : (
+                      <>
+                        <p>📊 Total subscribers in audience: <strong>{deleteResult.totalInAudience}</strong></p>
+                        <p>✨ Migrated to main ABS: <strong>{deleteResult.migrated}</strong></p>
+                        <p>🔄 Duplicates skipped: <strong>{deleteResult.duplicates}</strong></p>
+                        {deleteResult.errors > 0 && (
+                          <p className="text-orange-600">⚠️ Errors: <strong>{deleteResult.errors}</strong></p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

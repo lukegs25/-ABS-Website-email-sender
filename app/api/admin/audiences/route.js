@@ -181,10 +181,17 @@ export async function DELETE(req) {
         const mainABSAudience = audiencesList?.data?.find(a => a.name === "AI in Business (main)");
         
         if (!mainABSAudience) {
-          return NextResponse.json({ 
-            error: 'Main ABS audience not found in Resend' 
-          }, { status: 500 });
-        }
+          console.warn('Main ABS audience not found in Resend - skipping email migration');
+          // Skip migration but continue with deletion
+          migrationStats = {
+            totalInAudience: 0,
+            duplicates: 0,
+            migrated: 0,
+            errors: 0,
+            skipped: true,
+            message: 'Migration skipped - main ABS audience not found'
+          };
+        } else {
 
         // Get contacts from the audience being deleted
         const { data: targetContactsList } = await resend.contacts.list({
@@ -219,6 +226,7 @@ export async function DELETE(req) {
               migrationStats.errors++;
             }
           }
+        }
         }
 
         // Delete the audience from Resend

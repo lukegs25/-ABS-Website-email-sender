@@ -46,7 +46,7 @@ export async function POST(request) {
 
     const { data: requestedAudienceRows } = await supabase
       .from('audiences')
-      .select('id, name, resend_id')
+      .select('id, name, Resend_ID')
       .in('id', audienceIds);
 
     // Determine allowed audience IDs based on tokens (IDs or names)
@@ -65,17 +65,20 @@ export async function POST(request) {
 
     const resend = getResendClient();
     if (!resend) {
+      console.log('⚠️ No Resend API key configured - simulating email send');
       return NextResponse.json({ 
         ok: true, 
         simulated: true, 
         message: "Email sending simulated (no Resend API key)" 
       });
     }
+    
+    console.log('✅ Resend client connected and ready');
 
     // Load audience metadata from Supabase (only allowed audiences)
     const { data: audienceRows } = await supabase
       .from('audiences')
-      .select('id, name, resend_id')
+      .select('id, name, Resend_ID')
       .in('id', allowedAudienceIds);
 
     const idToAudience = new Map();
@@ -96,6 +99,7 @@ export async function POST(request) {
       try {
         if (testMode) {
           // In test mode, get a few sample emails instead of sending to entire audience
+          console.log(`🧪 TEST MODE - Sending to sample subscribers from audience: ${audienceInfo.name}`);
           const { data: subscribers, error } = await supabase
             .from('new_subscribers')
             .select('email')
@@ -139,6 +143,7 @@ export async function POST(request) {
 
             if (sendError) throw sendError;
 
+            console.log(`✅ Test email sent successfully to ${emails.length} recipients! Email ID: ${data?.id}`);
             results.push({
               audienceId,
               audienceName: audienceInfo.name,
@@ -155,41 +160,161 @@ export async function POST(request) {
             });
           }
         } else {
-          // Production mode - send to Resend audience
-          const broadcastPayload = {
-            audienceId: audienceInfo.resend_id,
-            from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
-            subject: subject,
-            html: `
-              <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
-                <div style="background-color: #002e5d; color: white; padding: 20px; text-align: center;">
-                  <h1 style="margin: 0; font-size: 24px;">AI in Business Society</h1>
+          // Production mode - always use database approach since subscribers are in Supabase, not Resend
+          if (false && audienceInfo.Resend_ID) { // Disabled broadcast API - using database instead
+            // Normalize Resend_ID to a UUID string (some rows may store an object like { id: "uuid" })
+            const rawResendId = audienceInfo.Resend_ID;
+            console.log('🔍 Raw Resend_ID from DB:', typeof rawResendId, JSON.stringify(rawResendId));
+            
+            let normalizedResendId;
+            if (typeof rawResendId === 'string') {
+              normalizedResendId = rawResendId;
+            } else if (rawResendId && typeof rawResendId === 'object') {
+              // Try common property names
+              normalizedResendId = rawResendId.id || rawResendId.uuid || rawResendId.value || String(rawResendId);
+            } else {
+              normalizedResendId = null;
+            }
+            
+            // Ensure it's a string
+            normalizedResendId = String(normalizedResendId || '');
+            console.log('✅ Normalized Resend_ID:', normalizedResendId);
+
+            // Basic UUID v4 format validation
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            if (!normalizedResendId || !uuidRegex.test(normalizedResendId)) {
+              results.push({
+                audienceId,
+                audienceName: audienceInfo.name,
+                error: `Invalid Resend ID format for this audience. Got: ${normalizedResendId || 'null/empty'}`
+              });
+              continue;
+            }
+            // Option 1: If audience has Resend ID, use broadcasts API
+            console.log(`📡 Sending via Resend Broadcast to audience: ${audienceInfo.name} (${normalizedResendId})`);
+            const broadcastPayload = {
+              audienceId: normalizedResendId,
+              from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
+              subject: subject,
+              html: `
+                <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
+                  <div style="background-color: #002e5d; color: white; padding: 20px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 24px;">AI in Business Society</h1>
+                  </div>
+                  <div style="padding: 20px; background-color: #f9f9f9;">
+                    ${content}
+                  </div>
+                  <div style="background-color: #002e5d; color: white; padding: 15px; text-align: center; font-size: 12px;">
+                    BYU AI in Business Society
+                  </div>
                 </div>
-                <div style="padding: 20px; background-color: #f9f9f9;">
-                  ${content}
-                </div>
-                <div style="background-color: #002e5d; color: white; padding: 15px; text-align: center; font-size: 12px;">
-                  BYU AI in Business Society
-                </div>
-              </div>
-            `,
-          };
-          
-          // Add attachments if present
-          if (attachments && attachments.length > 0) {
-            broadcastPayload.attachments = attachments;
+              `,
+            };
+            
+            if (attachments && attachments.length > 0) {
+              broadcastPayload.attachments = attachments;
+            }
+            
+            console.log('🔍 Broadcast payload:', JSON.stringify(broadcastPayload, null, 2));
+            const { data, error: sendError } = await resend.broadcasts.send(broadcastPayload);
+            
+            if (sendError) {
+              console.error('❌ Resend broadcast error:', JSON.stringify(sendError, null, 2));
+              throw new Error(sendError.message || JSON.stringify(sendError));
+            }
+
+            console.log(`✅ Broadcast sent successfully! Broadcast ID: ${data?.id}`);
+            results.push({
+              audienceId,
+              audienceName: audienceInfo.name,
+              success: true,
+              broadcastId: data?.id
+            });
+          } else {
+            // Option 2: No Resend ID - fetch subscribers from database and send individually
+            console.log(`📧 No Resend ID for audience: ${audienceInfo.name} - fetching subscribers from database`);
+            const { data: subscribers, error: dbError } = await supabase
+              .from('new_subscribers')
+              .select('email')
+              .eq('audience_id', audienceId);
+
+            if (dbError) throw dbError;
+
+            if (!subscribers || subscribers.length === 0) {
+              results.push({
+                audienceId,
+                audienceName: audienceInfo.name,
+                error: "No subscribers found for this audience"
+              });
+              continue;
+            }
+
+            const emails = subscribers.map(s => s.email);
+            console.log(`📬 Found ${emails.length} subscribers - sending individual emails via Resend`);
+            
+            let sentCount = 0;
+            let errorCount = 0;
+
+            // Helper to add delay to respect rate limits (2 requests/second)
+            const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            // Send individual emails to protect privacy (no one sees other recipients)
+            for (let i = 0; i < emails.length; i++) {
+              const email = emails[i];
+              
+              // Rate limit: Wait 500ms between emails (allows 2 requests/second)
+              if (i > 0) {
+                await delay(500);
+              }
+              
+              const emailPayload = {
+                from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
+                to: [email],
+                subject: subject,
+                html: `
+                  <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
+                    <div style="background-color: #002e5d; color: white; padding: 20px; text-align: center;">
+                      <h1 style="margin: 0; font-size: 24px;">AI in Business Society</h1>
+                    </div>
+                    <div style="padding: 20px; background-color: #f9f9f9;">
+                      ${content}
+                    </div>
+                    <div style="background-color: #002e5d; color: white; padding: 15px; text-align: center; font-size: 12px;">
+                      BYU AI in Business Society
+                    </div>
+                  </div>
+                `,
+              };
+
+              if (attachments && attachments.length > 0) {
+                emailPayload.attachments = attachments;
+              }
+
+              try {
+                const { data, error: sendError } = await resend.emails.send(emailPayload);
+                if (sendError) {
+                  console.error(`Send error for ${email}:`, sendError);
+                  errorCount++;
+                } else {
+                  sentCount++;
+                }
+              } catch (sendErr) {
+                console.error(`Send exception for ${email}:`, sendErr);
+                errorCount++;
+              }
+            }
+
+            console.log(`✅ Sent ${sentCount}/${emails.length} emails successfully via Resend (${errorCount} errors)`);
+            results.push({
+              audienceId,
+              audienceName: audienceInfo.name,
+              success: true,
+              recipientCount: emails.length,
+              sentCount,
+              errorCount,
+              method: 'database'
+            });
           }
-          
-          const { data, error: sendError } = await resend.broadcast.send(broadcastPayload);
-
-          if (sendError) throw sendError;
-
-          results.push({
-            audienceId,
-            audienceName: audienceInfo.name,
-            success: true,
-            broadcastId: data?.id
-          });
         }
       } catch (error) {
         results.push({
