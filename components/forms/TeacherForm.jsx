@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { subscriberSchema, scaiLeadSchema } from "@/lib/validators";
 import { exampleMajors } from "@/lib/constants";
-import { createClient } from "@/utils/supabase/client";
 
 export default function TeacherForm() {
   const [submitting, setSubmitting] = useState(false);
@@ -74,7 +73,6 @@ export default function TeacherForm() {
   async function onSubmit(values) {
     setSubmitting(true);
     try {
-      const supabase = createClient();
       const { email, mainOptIn, scaiOptIn, subgroups, advisorInterest, major, otherMajor, notifyNewMajorsOrSubgroups, otherAreasInterest } = values;
 
       if (!email) throw new Error("Email required");
@@ -139,46 +137,34 @@ export default function TeacherForm() {
 
       if (audiences.length === 0) throw new Error("Please select at least one newsletter");
 
-      // Check for existing subscriptions
-      const { data: existing } = await supabase
-        .from('new_subscribers')
-        .select('audience_id')
-        .eq('email', email)
-        .in('audience_id', audiences);
+      // Prepare subscription data
+      const subscriptions = audiences.map(audience_id => ({
+        email,
+        audience_id,
+        major: userMajor,
+        other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null,
+        is_student: false
+      }));
 
-      if (existing && existing.length > 0) {
-        const existingAudiences = existing.map(sub => sub.audience_id);
-        const newAudiences = audiences.filter(id => !existingAudiences.includes(id));
-        
-        if (newAudiences.length === 0) {
-          alert("You're already subscribed to all selected newsletters!");
-          return;
-        }
-        
-        // Only insert new subscriptions
-        const inserts = newAudiences.map(audience_id => ({
-          email,
-          audience_id,
-          major: userMajor,
-          other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null,
-          is_student: false
-        }));
-        const { error } = await supabase.from('new_subscribers').insert(inserts);
-        
-        if (error) throw new Error("Failed to subscribe");
-        alert(`Added to ${newAudiences.length} new newsletter(s)! You were already subscribed to ${existingAudiences.length} of them.`);
+      // Call API to create subscriptions (will handle notifications)
+      const subscriptionResponse = await fetch('/api/subscribers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, subscriptions })
+      });
+
+      const result = await subscriptionResponse.json();
+
+      if (!subscriptionResponse.ok) {
+        throw new Error(result.error || "Failed to subscribe");
+      }
+
+      // Show appropriate success message
+      if (result.existingCount > 0 && result.newCount > 0) {
+        alert(`Added to ${result.newCount} new newsletter(s)! You were already subscribed to ${result.existingCount} of them.`);
+      } else if (result.newCount === 0) {
+        alert("You're already subscribed to all selected newsletters!");
       } else {
-        // No existing subscriptions, insert all
-        const inserts = audiences.map(audience_id => ({
-          email,
-          audience_id,
-          major: userMajor,
-          other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null,
-          is_student: false
-        }));
-        const { error } = await supabase.from('new_subscribers').insert(inserts);
-
-        if (error) throw new Error("Failed to subscribe");
         alert("You are in. Expect to hear from us soon!");
       }
     } catch (e) {

@@ -97,6 +97,58 @@ export default function EmailComposer({ initialData = {} }) {
     }));
   };
 
+  // CSV Export Functions
+  const downloadCSV = (emails, audienceName) => {
+    const csv = emails.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${audienceName.replace(/[^a-z0-9]/gi, '_')}_recipients.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const downloadAllCSV = () => {
+    const allEmails = results.results
+      .filter(r => r.emailsSent)
+      .flatMap(r => r.emailsSent.map(email => ({
+        audience: r.audienceName,
+        email: email
+      })));
+    
+    const csv = 'Audience,Email\n' + 
+      allEmails.map(item => `"${item.audience}","${item.email}"`).join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'all_recipients.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  // Copy to clipboard function
+  const copyToClipboard = (emails) => {
+    const text = emails.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Emails copied to clipboard!');
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+      alert('Failed to copy to clipboard');
+    });
+  };
+
+  // Calculate unique email count
+  const getUniqueEmailCount = () => {
+    if (!results) return 0;
+    const allEmails = results.results
+      .filter(r => r.emailsSent)
+      .flatMap(r => r.emailsSent);
+    return new Set(allEmails).size;
+  };
+
   const convertFilesToBase64 = async (files) => {
     const promises = files.map(file => {
       return new Promise((resolve, reject) => {
@@ -157,7 +209,23 @@ export default function EmailComposer({ initialData = {} }) {
         }),
       });
 
-      const data = await response.json();
+      // Try to parse as JSON, but handle non-JSON responses
+      let data;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        // Response is not JSON (likely an error page or redirect)
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        console.error('Response status:', response.status);
+        console.error('Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        // Show first 200 chars of the error
+        const preview = text.substring(0, 200);
+        throw new Error(`Server error (${response.status}): ${preview}...`);
+      }
       
       if (response.ok) {
         setResults(data);
@@ -172,7 +240,7 @@ export default function EmailComposer({ initialData = {} }) {
           setAttachments([]);
         }
       } else {
-        alert(`Error: ${data.error}`);
+        alert(`Error: ${data.error || data.details || 'Unknown error'}`);
       }
     } catch (error) {
       alert(`Failed to send email: ${error.message}`);
@@ -318,27 +386,120 @@ export default function EmailComposer({ initialData = {} }) {
 
       {/* Results */}
       {results && (
-        <div className="mt-8 p-4 bg-gray-50 rounded-md">
-          <h3 className="text-lg font-semibold mb-3">
-            Email Send Results
-          </h3>
+        <div className="mt-8 p-6 bg-gray-50 rounded-lg border-2 border-green-200">
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-2xl font-bold text-green-700">
+              Email Send Results
+            </h3>
+            {results.results.some(r => r.emailsSent && r.emailsSent.length > 0) && (
+              <button
+                onClick={downloadAllCSV}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
+              >
+                Export All to CSV
+              </button>
+            )}
+          </div>
           
-          <div className="mb-4">
-            <p><strong>Total audiences:</strong> {results.summary.total}</p>
-            <p className="text-green-600"><strong>Successful:</strong> {results.summary.successful}</p>
-            <p className="text-red-600"><strong>Errors:</strong> {results.summary.errors}</p>
+          <div className="mb-6 p-4 bg-white rounded-md shadow-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Total Audiences</p>
+                <p className="text-2xl font-bold text-gray-800">{results.summary.total}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Successful</p>
+                <p className="text-2xl font-bold text-green-600">{results.summary.successful}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Errors</p>
+                <p className="text-2xl font-bold text-red-600">{results.summary.errors}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Unique Recipients</p>
+                <p className="text-2xl font-bold text-blue-600">{getUniqueEmailCount()}</p>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-4">
             {results.results.map((result, index) => (
-              <div key={index} className={`p-2 rounded ${result.success ? 'bg-green-100' : 'bg-red-100'}`}>
-                <p><strong>{result.audienceName}</strong></p>
-                {result.success ? (
-                  <p className="text-green-700 text-sm">
-                    Sent successfully
-                  </p>
-                ) : (
-                  <p className="text-red-700 text-sm">Error: {result.error}</p>
+              <div 
+                key={index} 
+                className={`rounded-lg border-2 overflow-hidden ${
+                  result.success ? 'border-green-300 bg-white' : 'border-red-300 bg-red-50'
+                }`}
+              >
+                <div className={`p-4 ${result.success ? 'bg-green-50' : 'bg-red-100'}`}>
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h4 className="text-lg font-semibold text-gray-800">
+                        {result.audienceName}
+                      </h4>
+                      {result.success ? (
+                        <div className="mt-1 space-y-1">
+                          <p className="text-green-700 font-medium">
+                            Sent successfully to {result.emailsSent?.length || result.recipientCount || 0} recipients
+                          </p>
+                          {result.testMode && (
+                            <p className="text-sm text-orange-600 font-medium">
+                              TEST MODE - Sample recipients only
+                            </p>
+                          )}
+                          {result.sentCount !== undefined && result.errorCount > 0 && (
+                            <p className="text-sm text-yellow-600">
+                              {result.sentCount} sent, {result.errorCount} failed
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-red-700 mt-1">Error: {result.error}</p>
+                      )}
+                    </div>
+                    
+                    {result.success && result.emailsSent && result.emailsSent.length > 0 && (
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => copyToClipboard(result.emailsSent)}
+                          className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
+                          title="Copy emails to clipboard"
+                        >
+                          Copy
+                        </button>
+                        <button
+                          onClick={() => downloadCSV(result.emailsSent, result.audienceName)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        >
+                          Export CSV
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {result.success && result.emailsSent && result.emailsSent.length > 0 && (
+                  <details className="group">
+                    <summary className="cursor-pointer p-3 bg-gray-100 hover:bg-gray-200 transition-colors">
+                      <span className="font-medium text-gray-700">
+                        Show all {result.emailsSent.length} email addresses
+                      </span>
+                      <span className="ml-2 text-gray-500 text-sm">
+                        (click to expand)
+                      </span>
+                    </summary>
+                    <div className="p-4 bg-white max-h-96 overflow-y-auto">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {result.emailsSent.map((email, emailIndex) => (
+                          <div 
+                            key={emailIndex}
+                            className="p-2 bg-gray-50 rounded text-sm font-mono text-gray-700 border border-gray-200"
+                          >
+                            {email}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </details>
                 )}
               </div>
             ))}

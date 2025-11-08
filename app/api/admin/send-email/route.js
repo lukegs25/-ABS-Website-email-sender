@@ -17,16 +17,28 @@ const AUDIENCE_MAP = {
 };
 
 export async function POST(request) {
+  console.log('🔵 [send-email] Starting email send request');
   try {
     // Check admin authentication and permissions
     const session = await getAdminSession();
+    console.log('🔵 [send-email] Session check:', session ? 'authenticated' : 'not authenticated');
     if (!session) {
       return NextResponse.json({ 
         error: "Unauthorized - Admin authentication required" 
       }, { status: 401 });
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+      console.log('🔵 [send-email] Request body parsed successfully. Audiences:', body.audienceIds);
+    } catch (parseError) {
+      console.error('❌ [send-email] Failed to parse request body:', parseError);
+      return NextResponse.json({ 
+        error: "Invalid request body - must be valid JSON",
+        details: parseError.message 
+      }, { status: 400 });
+    }
     const { subject, content, audienceIds, fromName = "AI in Business Society", testMode = false, attachments = [] } = body;
 
     // Basic validation
@@ -150,7 +162,8 @@ export async function POST(request) {
               success: true,
               testMode: true,
               recipientCount: emails.length,
-              emailId: data?.id
+              emailId: data?.id,
+              emailsSent: emails
             });
           } else {
             results.push({
@@ -224,11 +237,22 @@ export async function POST(request) {
             }
 
             console.log(`✅ Broadcast sent successfully! Broadcast ID: ${data?.id}`);
+            
+            // Fetch emails for the broadcast mode to display in results
+            const { data: broadcastSubscribers } = await supabase
+              .from('new_subscribers')
+              .select('email')
+              .eq('audience_id', audienceId);
+            
+            const broadcastEmails = broadcastSubscribers ? broadcastSubscribers.map(s => s.email) : [];
+            
             results.push({
               audienceId,
               audienceName: audienceInfo.name,
               success: true,
-              broadcastId: data?.id
+              broadcastId: data?.id,
+              recipientCount: broadcastEmails.length,
+              emailsSent: broadcastEmails
             });
           } else {
             // Option 2: No Resend ID - fetch subscribers from database and send individually
@@ -312,7 +336,8 @@ export async function POST(request) {
               recipientCount: emails.length,
               sentCount,
               errorCount,
-              method: 'database'
+              method: 'database',
+              emailsSent: emails
             });
           }
         }
@@ -340,10 +365,12 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('❌ [send-email] Email sending error:', error);
+    console.error('❌ [send-email] Error stack:', error.stack);
     return NextResponse.json({ 
       error: "Failed to send emails", 
-      details: error.message 
+      details: error.message,
+      errorType: error.constructor.name
     }, { status: 500 });
   }
 }
