@@ -353,6 +353,13 @@ export async function POST(request) {
     const successCount = results.filter(r => r.success).length;
     const errorCount = results.filter(r => r.error).length;
 
+    // Send confirmation email to admin
+    await sendCampaignConfirmation(
+      'lukegsine@gmail.com',
+      { subject, fromName, testMode },
+      results
+    );
+
     return NextResponse.json({
       ok: true,
       results,
@@ -372,6 +379,160 @@ export async function POST(request) {
       details: error.message,
       errorType: error.constructor.name
     }, { status: 500 });
+  }
+}
+
+// Helper function to send campaign confirmation email
+async function sendCampaignConfirmation(adminEmail, campaignDetails, results) {
+  try {
+    const resend = getResendClient();
+    if (!resend) {
+      console.log('Resend client not available - skipping campaign confirmation');
+      return;
+    }
+
+    const { subject, fromName, testMode } = campaignDetails;
+    
+    // Calculate totals
+    const totalAudiences = results.length;
+    const successfulAudiences = results.filter(r => r.success).length;
+    const failedAudiences = results.filter(r => r.error).length;
+    
+    let totalRecipients = 0;
+    let totalSent = 0;
+    let totalErrors = 0;
+    
+    results.forEach(r => {
+      if (r.recipientCount) totalRecipients += r.recipientCount;
+      if (r.sentCount !== undefined) totalSent += r.sentCount;
+      if (r.errorCount) totalErrors += r.errorCount;
+    });
+    
+    // If sentCount wasn't tracked, use recipientCount for successful sends
+    if (totalSent === 0 && successfulAudiences > 0) {
+      totalSent = totalRecipients;
+    }
+
+    // Build audience breakdown HTML
+    let audienceBreakdownHtml = '';
+    
+    results.forEach(result => {
+      const isSuccess = result.success;
+      const hasError = result.error;
+      
+      audienceBreakdownHtml += `
+        <div style="margin-bottom: 25px; padding: 15px; background-color: ${isSuccess ? '#f0f9ff' : '#fff5f5'}; border-left: 4px solid ${isSuccess ? '#3b82f6' : '#ef4444'}; border-radius: 4px;">
+          <h3 style="margin: 0 0 10px 0; color: ${isSuccess ? '#1e40af' : '#991b1b'}; font-size: 16px;">
+            ${result.audienceName || 'Unknown Audience'}
+            ${result.testMode ? ' <span style="background-color: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 3px; font-size: 12px;">TEST</span>' : ''}
+          </h3>
+          
+          ${isSuccess ? `
+            <p style="margin: 5px 0; color: #059669; font-weight: bold;">
+              ✓ Successfully sent to ${result.recipientCount || 0} recipient(s)
+              ${result.errorCount ? ` (${result.errorCount} failed)` : ''}
+            </p>
+            
+            ${result.emailsSent && result.emailsSent.length > 0 ? `
+              <details style="margin-top: 10px;">
+                <summary style="cursor: pointer; color: #1e40af; font-weight: 500;">
+                  View all recipients (${result.emailsSent.length})
+                </summary>
+                <div style="margin-top: 10px; padding: 10px; background-color: white; border-radius: 4px; max-height: 200px; overflow-y: auto;">
+                  ${result.emailsSent.map(email => `<div style="padding: 3px 0; font-size: 13px; color: #374151;">${email}</div>`).join('')}
+                </div>
+              </details>
+            ` : ''}
+          ` : `
+            <p style="margin: 5px 0; color: #dc2626; font-weight: bold;">
+              ✗ Failed to send
+            </p>
+            <p style="margin: 5px 0; color: #991b1b; font-size: 14px;">
+              Error: ${hasError || 'Unknown error'}
+            </p>
+          `}
+        </div>
+      `;
+    });
+
+    const modeLabel = testMode ? 'TEST MODE' : 'PRODUCTION';
+    const modeBadgeColor = testMode ? '#f59e0b' : '#10b981';
+
+    await resend.emails.send({
+      from: 'ABS Campaign Reports <no-reply@aiinbusinesssociety.org>',
+      to: adminEmail,
+      subject: `${testMode ? '🧪 [TEST]' : '✅'} Campaign Sent: ${subject}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; background-color: #f9fafb;">
+          <!-- Header -->
+          <div style="background-color: #002E5D; color: white; padding: 30px 20px; text-align: center;">
+            <h1 style="margin: 0 0 10px 0; font-size: 28px;">📧 Campaign Confirmation</h1>
+            <div style="background-color: ${modeBadgeColor}; display: inline-block; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 14px;">
+              ${modeLabel}
+            </div>
+          </div>
+          
+          <!-- Campaign Details -->
+          <div style="background-color: white; padding: 25px; border-bottom: 3px solid #e5e7eb;">
+            <h2 style="margin: 0 0 15px 0; color: #111827; font-size: 20px;">Campaign Details</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Subject:</td>
+                <td style="padding: 8px 0; color: #111827; font-weight: 600;">${subject}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">From Name:</td>
+                <td style="padding: 8px 0; color: #111827;">${fromName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Sent At:</td>
+                <td style="padding: 8px 0; color: #111827;">${new Date().toLocaleString()}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <!-- Summary Statistics -->
+          <div style="background-color: white; padding: 25px; border-bottom: 3px solid #e5e7eb;">
+            <h2 style="margin: 0 0 15px 0; color: #111827; font-size: 20px;">Summary</h2>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+              <div style="padding: 15px; background-color: #f0f9ff; border-radius: 6px; text-align: center;">
+                <div style="font-size: 32px; font-weight: bold; color: #1e40af;">${totalAudiences}</div>
+                <div style="color: #6b7280; font-size: 14px; margin-top: 5px;">Total Audiences</div>
+              </div>
+              <div style="padding: 15px; background-color: #f0fdf4; border-radius: 6px; text-align: center;">
+                <div style="font-size: 32px; font-weight: bold; color: #059669;">${totalSent}</div>
+                <div style="color: #6b7280; font-size: 14px; margin-top: 5px;">Emails Sent</div>
+              </div>
+              <div style="padding: 15px; background-color: ${successfulAudiences > 0 ? '#f0fdf4' : '#fef2f2'}; border-radius: 6px; text-align: center;">
+                <div style="font-size: 32px; font-weight: bold; color: ${successfulAudiences > 0 ? '#059669' : '#dc2626'};">${successfulAudiences}</div>
+                <div style="color: #6b7280; font-size: 14px; margin-top: 5px;">Successful</div>
+              </div>
+              <div style="padding: 15px; background-color: ${totalErrors > 0 ? '#fef2f2' : '#f9fafb'}; border-radius: 6px; text-align: center;">
+                <div style="font-size: 32px; font-weight: bold; color: ${totalErrors > 0 ? '#dc2626' : '#6b7280'};">${totalErrors}</div>
+                <div style="color: #6b7280; font-size: 14px; margin-top: 5px;">Failed</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Audience Breakdown -->
+          <div style="background-color: white; padding: 25px;">
+            <h2 style="margin: 0 0 20px 0; color: #111827; font-size: 20px;">Audience Breakdown</h2>
+            ${audienceBreakdownHtml}
+          </div>
+          
+          <!-- Footer -->
+          <div style="background-color: #002E5D; color: white; padding: 20px; text-align: center; font-size: 12px;">
+            <p style="margin: 0;">AI in Business Society - Email Campaign System</p>
+            <p style="margin: 5px 0 0 0; opacity: 0.8;">This is an automated confirmation email</p>
+          </div>
+        </div>
+      `
+    });
+
+    console.log(`📊 Campaign confirmation sent to ${adminEmail}`);
+  } catch (error) {
+    console.error('Error sending campaign confirmation:', error);
+    // Don't throw - we don't want to fail the campaign if confirmation fails
   }
 }
 
