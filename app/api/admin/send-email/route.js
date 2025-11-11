@@ -3,6 +3,9 @@ import { getResendClient } from "@/lib/resend";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { getAdminSession, filterAudiencesByAdmin, filterAudienceIdsFromRows } from "@/lib/auth-helpers";
 
+// Set maximum function duration to 60 seconds (Vercel Hobby plan limit)
+export const maxDuration = 60;
+
 // Audience ID mappings from resend_sample.txt
 const AUDIENCE_MAP = {
   8: { name: "AI in Business (main)", resendId: "dd09d752-45b5-4f48-8fec-1fc4ee692b92" },
@@ -123,10 +126,10 @@ export async function POST(request) {
           if (subscribers && subscribers.length > 0) {
             const emails = subscribers.map(s => s.email);
             
-            // Prepare email payload
-            const emailPayload = {
+            // Use batch API even for test mode to ensure privacy
+            const batchPayload = emails.map(email => ({
               from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
-              to: emails,
+              to: [email],
               subject: `[TEST] ${subject}`,
               html: `
                 <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
@@ -144,25 +147,20 @@ export async function POST(request) {
                   </div>
                 </div>
               `,
-            };
+              ...(attachments && attachments.length > 0 ? { attachments } : {})
+            }));
             
-            // Add attachments if present
-            if (attachments && attachments.length > 0) {
-              emailPayload.attachments = attachments;
-            }
-            
-            const { data, error: sendError } = await resend.emails.send(emailPayload);
+            const { data, error: sendError } = await resend.batch.send(batchPayload);
 
             if (sendError) throw sendError;
 
-            console.log(`✅ Test email sent successfully to ${emails.length} recipients! Email ID: ${data?.id}`);
+            console.log(`✅ Test email sent successfully to ${emails.length} recipients via Batch API`);
             results.push({
               audienceId,
               audienceName: audienceInfo.name,
               success: true,
               testMode: true,
               recipientCount: emails.length,
-              emailId: data?.id,
               emailsSent: emails
             });
           } else {
@@ -274,24 +272,35 @@ export async function POST(request) {
             }
 
             const emails = subscribers.map(s => s.email);
-            console.log(`📬 Found ${emails.length} subscribers - sending individual emails via Resend`);
+            console.log(`📬 Found ${emails.length} subscribers - sending via Resend Batch API`);
             
             let sentCount = 0;
             let errorCount = 0;
+            const failedEmails = [];
 
             // Helper to add delay to respect rate limits (2 requests/second)
             const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-            // Send individual emails to protect privacy (no one sees other recipients)
-            for (let i = 0; i < emails.length; i++) {
-              const email = emails[i];
+            // Chunk emails into batches of 100 (Resend Batch API limit)
+            const BATCH_SIZE = 100;
+            const batches = [];
+            for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+              batches.push(emails.slice(i, i + BATCH_SIZE));
+            }
+
+            console.log(`📦 Split into ${batches.length} batch(es) of up to ${BATCH_SIZE} emails each`);
+
+            // Send each batch using Resend's Batch API
+            for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+              const batch = batches[batchIndex];
               
-              // Rate limit: Wait 500ms between emails (allows 2 requests/second)
-              if (i > 0) {
-                await delay(500);
+              // Rate limit: Wait 600ms between batches (allows ~2 requests/second)
+              if (batchIndex > 0) {
+                await delay(600);
               }
-              
-              const emailPayload = {
+
+              // Build array of individual email objects for this batch
+              const batchPayload = batch.map(email => ({
                 from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
                 to: [email],
                 subject: subject,
@@ -308,27 +317,46 @@ export async function POST(request) {
                     </div>
                   </div>
                 `,
-              };
-
-              if (attachments && attachments.length > 0) {
-                emailPayload.attachments = attachments;
-              }
+                ...(attachments && attachments.length > 0 ? { attachments } : {})
+              }));
 
               try {
-                const { data, error: sendError } = await resend.emails.send(emailPayload);
-                if (sendError) {
-                  console.error(`Send error for ${email}:`, sendError);
-                  errorCount++;
+                console.log(`📨 Sending batch ${batchIndex + 1}/${batches.length} (${batch.length} emails)`);
+                const { data, error: batchError } = await resend.batch.send(batchPayload);
+                
+                if (batchError) {
+                  console.error(`❌ Batch ${batchIndex + 1} error:`, batchError);
+                  errorCount += batch.length;
+                  batch.forEach(email => failedEmails.push({ email, error: batchError.message || 'Batch send failed' }));
                 } else {
-                  sentCount++;
+                  // Resend batch API returns array of results
+                  if (data && Array.isArray(data)) {
+                    data.forEach((result, idx) => {
+                      if (result.error) {
+                        errorCount++;
+                        failedEmails.push({ email: batch[idx], error: result.error });
+                      } else {
+                        sentCount++;
+                      }
+                    });
+                  } else {
+                    // If no detailed results, assume all succeeded
+                    sentCount += batch.length;
+                  }
+                  console.log(`✅ Batch ${batchIndex + 1} completed`);
                 }
-              } catch (sendErr) {
-                console.error(`Send exception for ${email}:`, sendErr);
-                errorCount++;
+              } catch (batchErr) {
+                console.error(`❌ Batch ${batchIndex + 1} exception:`, batchErr);
+                errorCount += batch.length;
+                batch.forEach(email => failedEmails.push({ email, error: batchErr.message || 'Exception during batch send' }));
               }
             }
 
-            console.log(`✅ Sent ${sentCount}/${emails.length} emails successfully via Resend (${errorCount} errors)`);
+            console.log(`✅ Sent ${sentCount}/${emails.length} emails successfully via Resend Batch API (${errorCount} errors)`);
+            if (failedEmails.length > 0) {
+              console.log(`❌ Failed emails:`, failedEmails.slice(0, 10)); // Log first 10 failures
+            }
+
             results.push({
               audienceId,
               audienceName: audienceInfo.name,
@@ -336,8 +364,9 @@ export async function POST(request) {
               recipientCount: emails.length,
               sentCount,
               errorCount,
-              method: 'database',
-              emailsSent: emails
+              method: 'batch',
+              emailsSent: emails,
+              failedEmails: failedEmails.length > 0 ? failedEmails : undefined
             });
           }
         }

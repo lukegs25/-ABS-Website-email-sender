@@ -117,12 +117,12 @@ export default function StudentForm() {
 
       // Prepare subscription data
       const subscriptions = audiences.map(audience_id => ({
-        email,
-        audience_id,
-        major: userMajor,
-        other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null,
-        is_student: true
-      }));
+          email,
+          audience_id,
+          major: userMajor,
+          other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null,
+          is_student: true
+        }));
 
       // Call API to create subscriptions (will handle notifications)
       const subscriptionResponse = await fetch('/api/subscribers', {
@@ -132,7 +132,7 @@ export default function StudentForm() {
       });
 
       const result = await subscriptionResponse.json();
-
+        
       if (!subscriptionResponse.ok) {
         throw new Error(result.error || "Failed to subscribe");
       }

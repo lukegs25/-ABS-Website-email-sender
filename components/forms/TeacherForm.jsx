@@ -139,12 +139,12 @@ export default function TeacherForm() {
 
       // Prepare subscription data
       const subscriptions = audiences.map(audience_id => ({
-        email,
-        audience_id,
-        major: userMajor,
-        other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null,
-        is_student: false
-      }));
+          email,
+          audience_id,
+          major: userMajor,
+          other_text: (audience_id === 3 && otherAreasInterest?.trim()) ? otherAreasInterest.trim() : null,
+          is_student: false
+        }));
 
       // Call API to create subscriptions (will handle notifications)
       const subscriptionResponse = await fetch('/api/subscribers', {
@@ -154,7 +154,7 @@ export default function TeacherForm() {
       });
 
       const result = await subscriptionResponse.json();
-
+        
       if (!subscriptionResponse.ok) {
         throw new Error(result.error || "Failed to subscribe");
       }
