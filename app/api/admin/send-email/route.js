@@ -383,11 +383,18 @@ export async function POST(request) {
     const errorCount = results.filter(r => r.error).length;
 
     // Send confirmation email to admin
-    await sendCampaignConfirmation(
-      'lukegsine@gmail.com',
-      { subject, fromName, testMode },
-      results
-    );
+    console.log('📊 Sending campaign confirmation email to lukegsine@gmail.com');
+    try {
+      await sendCampaignConfirmation(
+        'lukegsine@gmail.com',
+        { subject, fromName, testMode },
+        results
+      );
+      console.log('✅ Campaign confirmation email sent successfully');
+    } catch (confirmError) {
+      console.error('❌ Failed to send confirmation email:', confirmError);
+      // Don't fail the whole request if confirmation fails
+    }
 
     return NextResponse.json({
       ok: true,
@@ -487,7 +494,9 @@ async function sendCampaignConfirmation(adminEmail, campaignDetails, results) {
     const modeLabel = testMode ? 'TEST MODE' : 'PRODUCTION';
     const modeBadgeColor = testMode ? '#f59e0b' : '#10b981';
 
-    await resend.emails.send({
+    console.log(`📨 Preparing confirmation email to ${adminEmail} for campaign: "${subject}"`);
+    
+    const { data: emailData, error: emailError } = await resend.emails.send({
       from: 'ABS Campaign Reports <no-reply@aiinbusinesssociety.org>',
       to: adminEmail,
       subject: `${testMode ? '🧪 [TEST]' : '✅'} Campaign Sent: ${subject}`,
@@ -558,9 +567,15 @@ async function sendCampaignConfirmation(adminEmail, campaignDetails, results) {
       `
     });
 
-    console.log(`📊 Campaign confirmation sent to ${adminEmail}`);
+    if (emailError) {
+      console.error('❌ Resend API error sending confirmation:', emailError);
+      throw new Error(`Failed to send confirmation email: ${emailError.message || JSON.stringify(emailError)}`);
+    }
+
+    console.log(`✅ Campaign confirmation sent successfully to ${adminEmail} (Email ID: ${emailData?.id})`);
   } catch (error) {
-    console.error('Error sending campaign confirmation:', error);
+    console.error('❌ Error sending campaign confirmation:', error);
+    console.error('Error details:', error.message, error.stack);
     // Don't throw - we don't want to fail the campaign if confirmation fails
   }
 }

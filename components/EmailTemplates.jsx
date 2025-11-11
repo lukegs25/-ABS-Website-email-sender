@@ -17,8 +17,6 @@ const EMAIL_TEMPLATES = {
 <h3>What to Expect:</h3>
 <p>[EVENT_DESCRIPTION]</p>
 
-<p>Questions? Reply to this email or contact us.</p>
-
 <p>See you there!<br>
 The ABS Team</p>
     `.trim()
@@ -125,8 +123,6 @@ The AI in Business Society Team</p>
 
 <h3>📝 What to Bring:</h3>
 <p>[WHAT_TO_BRING]</p>
-
-<p>Can't make it? Please let us know by replying to this email.</p>
 
 <p>Looking forward to seeing you there!</p>
     `.trim()
