@@ -240,7 +240,8 @@ export async function POST(request) {
             const { data: broadcastSubscribers } = await supabase
               .from('new_subscribers')
               .select('email')
-              .eq('audience_id', audienceId);
+              .eq('audience_id', audienceId)
+              .range(0, 9999);
             
             const broadcastEmails = broadcastSubscribers ? broadcastSubscribers.map(s => s.email) : [];
             
@@ -258,7 +259,8 @@ export async function POST(request) {
             const { data: subscribers, error: dbError } = await supabase
               .from('new_subscribers')
               .select('email')
-              .eq('audience_id', audienceId);
+              .eq('audience_id', audienceId)
+              .range(0, 9999);
 
             if (dbError) throw dbError;
 
@@ -601,9 +603,12 @@ export async function GET() {
       .from('audiences')
       .select('id, name');
 
+    // NOTE: Supabase has a default limit of 1000 rows. We use range(0, 9999) to fetch up to 10,000 subscribers.
+    // If you expect more than 10,000 subscribers, increase the range or implement pagination.
     const { data: subs } = await supabase
       .from('new_subscribers')
-      .select('audience_id');
+      .select('audience_id')
+      .range(0, 9999);
 
     const countMap = {};
     subs?.forEach(sub => {

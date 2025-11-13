@@ -20,9 +20,12 @@ export async function GET() {
 
   try {
     // Get all subscribers with detailed information
+    // NOTE: Supabase has a default limit of 1000 rows. We use range(0, 9999) to fetch up to 10,000 subscribers.
+    // If you expect more than 10,000 subscribers, increase the range or implement pagination.
     const { data: subscribers, error } = await supabase
       .from('new_subscribers')
       .select('*')
+      .range(0, 9999)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
