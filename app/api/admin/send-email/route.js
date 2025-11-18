@@ -275,26 +275,21 @@ export async function POST(request) {
             }
 
             const emails = subscribers.map(s => s.email);
-            console.log(`📬 Found ${emails.length} subscribers - sending individually via Resend`);
+            console.log(`📬 Found ${emails.length} subscribers - sending via BCC batches`);
             
             let sentCount = 0;
             let errorCount = 0;
             const failedEmails = [];
 
-            // Helper to add delay to respect rate limits
-            const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-            // Process emails in batches to avoid rate limiting
-            // Resend Pro allows 10 requests/second
-            // We'll send 30 at a time with 3-second delays to stay under limit
-            const BATCH_SIZE = 30;
-            const batches = [];
-            for (let i = 0; i < emails.length; i += BATCH_SIZE) {
-              batches.push(emails.slice(i, i + BATCH_SIZE));
+            // Split into smaller BCC batches to avoid limits
+            // Using 50 per BCC to be conservative (Resend may have BCC limits)
+            const BCC_BATCH_SIZE = 50;
+            const bccBatches = [];
+            for (let i = 0; i < emails.length; i += BCC_BATCH_SIZE) {
+              bccBatches.push(emails.slice(i, i + BCC_BATCH_SIZE));
             }
 
-            console.log(`📦 Processing in ${batches.length} batch(es) of up to ${BATCH_SIZE} emails each`);
-            console.log(`⏱️  Estimated time: ~${batches.length * 3}s (staying under 10 req/sec limit)`);
+            console.log(`📦 Sending ${bccBatches.length} BCC emails (~${BCC_BATCH_SIZE} recipients each)`);
 
             const emailTemplate = `
               <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
@@ -310,96 +305,54 @@ export async function POST(request) {
               </div>
             `;
 
-            // Send each batch with concurrent individual emails
-            for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-              const batch = batches[batchIndex];
-              
-              console.log(`📨 Batch ${batchIndex + 1}/${batches.length}: Sending ${batch.length} emails individually...`);
-              
-              // Send all emails in this batch concurrently using Promise.allSettled
-              const emailPromises = batch.map(email => 
-                resend.emails.send({
+            // Send each BCC batch
+            for (let i = 0; i < bccBatches.length; i++) {
+              try {
+                console.log(`📨 Sending BCC batch ${i + 1}/${bccBatches.length} (${bccBatches[i].length} recipients)`);
+                
+                const { data, error } = await resend.emails.send({
                   from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
-                  to: [email],
+                  to: ['no-reply@aiinbusinesssociety.org'],
+                  bcc: bccBatches[i],
                   subject: subject,
                   html: emailTemplate,
                   ...(attachments && attachments.length > 0 ? { attachments } : {})
-                }).catch(error => ({ error, email }))
-              );
-
-              try {
-                const results = await Promise.allSettled(emailPromises);
-                
-                // Process results
-                results.forEach((result, idx) => {
-                  const email = batch[idx];
-                  
-                  if (result.status === 'fulfilled') {
-                    const value = result.value;
-                    if (value.error) {
-                      // Promise resolved but with an error
-                      errorCount++;
-                      failedEmails.push({ 
-                        email: value.email || email, 
-                        error: value.error.message || JSON.stringify(value.error) 
-                      });
-                    } else if (value.data || value.id) {
-                      // Successful send
-                      sentCount++;
-                    } else {
-                      // Unexpected response
-                      errorCount++;
-                      failedEmails.push({ email, error: 'Unexpected response format' });
-                    }
-                  } else {
-                    // Promise rejected
-                    errorCount++;
-                    failedEmails.push({ 
-                      email, 
-                      error: result.reason?.message || JSON.stringify(result.reason) 
-                    });
-                  }
                 });
                 
-                console.log(`✅ Batch ${batchIndex + 1}/${batches.length} done. Progress: ${sentCount} sent, ${errorCount} failed`);
-              } catch (batchErr) {
-                console.error(`❌ Batch ${batchIndex + 1} exception:`, batchErr.message);
-                errorCount += batch.length;
-                batch.forEach(email => failedEmails.push({ email, error: batchErr.message || 'Exception during send' }));
+                if (error) {
+                  throw new Error(error.message || JSON.stringify(error));
+                }
+                
+                sentCount += bccBatches[i].length;
+                console.log(`✅ BCC batch ${i + 1}/${bccBatches.length} sent successfully`);
+                
+              } catch (err) {
+                console.error(`❌ BCC batch ${i + 1} failed:`, err.message);
+                console.error(`❌ Full error object:`, JSON.stringify(err, null, 2));
+                console.error(`❌ Error stack:`, err.stack);
+                errorCount += bccBatches[i].length;
+                bccBatches[i].forEach(email => {
+                  failedEmails.push({ email, error: err.message });
+                });
               }
               
-              // Wait 3 seconds before next batch to respect Resend's 10 req/sec limit
-              // 30 emails in 3 seconds = 10 emails/second average
-              if (batchIndex < batches.length - 1) {
-                await delay(3000);
+              // 500ms delay between batches (respects 2 req/sec limit)
+              if (i < bccBatches.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
               }
             }
 
-            console.log(`📊 Final results: ${sentCount} sent successfully, ${errorCount} failed out of ${emails.length} total`);
-            if (failedEmails.length > 0) {
-              console.log(`❌ First 10 failures:`, failedEmails.slice(0, 10));
-              
-              // Analyze error patterns
-              const errorTypes = {};
-              failedEmails.forEach(f => {
-                const errorMsg = f.error || 'Unknown error';
-                errorTypes[errorMsg] = (errorTypes[errorMsg] || 0) + 1;
-              });
-              console.log(`📊 Error breakdown:`, errorTypes);
-            }
-
-            // Determine if the send was successful overall
-            const wasSuccessful = sentCount > 0 || errorCount === 0;
+            console.log(`📊 Final: ${sentCount} sent, ${errorCount} failed out of ${emails.length}`);
 
             results.push({
               audienceId,
               audienceName: audienceInfo.name,
-              success: wasSuccessful,
+              success: sentCount > 0,
               recipientCount: emails.length,
               sentCount,
               errorCount,
-              method: 'individual',
-              emailsSent: emails.slice(0, sentCount), // Only include emails that were actually sent
+              method: 'bcc-batch',
+              emailsSent: sentCount > 0 ? emails.slice(0, sentCount) : [],
               failedEmails: failedEmails.length > 0 ? failedEmails : undefined
             });
           }
