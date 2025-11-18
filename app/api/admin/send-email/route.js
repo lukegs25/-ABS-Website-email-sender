@@ -280,11 +280,12 @@ export async function POST(request) {
             let errorCount = 0;
             const failedEmails = [];
 
-            // Helper to add delay to respect rate limits (2 requests/second)
+            // Helper to add delay to respect rate limits
             const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-            // Chunk emails into batches of 100 (Resend Batch API limit)
-            const BATCH_SIZE = 100;
+            // Chunk emails into smaller batches for reliability
+            // Reduced from 100 to 50 to avoid rate limits and ensure reliability
+            const BATCH_SIZE = 50;
             const batches = [];
             for (let i = 0; i < emails.length; i += BATCH_SIZE) {
               batches.push(emails.slice(i, i + BATCH_SIZE));
@@ -296,9 +297,11 @@ export async function POST(request) {
             for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
               const batch = batches[batchIndex];
               
-              // Rate limit: Wait 600ms between batches (allows ~2 requests/second)
+              // Rate limit: Wait 1200ms between batches (safer rate limiting)
+              // This ensures ~1 batch per second to avoid hitting rate limits
               if (batchIndex > 0) {
-                await delay(600);
+                console.log(`⏳ Waiting 1.2s before next batch (rate limiting)...`);
+                await delay(1200);
               }
 
               // Build array of individual email objects for this batch
@@ -324,17 +327,30 @@ export async function POST(request) {
 
               try {
                 console.log(`📨 Sending batch ${batchIndex + 1}/${batches.length} (${batch.length} emails)`);
+                console.log(`🔍 First email in batch: ${batch[0]}`);
+                
                 const { data, error: batchError } = await resend.batch.send(batchPayload);
                 
+                console.log(`🔍 Batch ${batchIndex + 1} response:`, { 
+                  hasData: !!data, 
+                  dataType: Array.isArray(data) ? 'array' : typeof data,
+                  dataLength: Array.isArray(data) ? data.length : 'N/A',
+                  hasError: !!batchError,
+                  errorMessage: batchError?.message || batchError
+                });
+                
                 if (batchError) {
-                  console.error(`❌ Batch ${batchIndex + 1} error:`, batchError);
+                  console.error(`❌ Batch ${batchIndex + 1} error details:`, JSON.stringify(batchError, null, 2));
                   errorCount += batch.length;
-                  batch.forEach(email => failedEmails.push({ email, error: batchError.message || 'Batch send failed' }));
-                } else {
+                  const errorMsg = batchError.message || JSON.stringify(batchError) || 'Batch send failed';
+                  batch.forEach(email => failedEmails.push({ email, error: errorMsg }));
+                } else if (data) {
                   // Resend batch API returns array of results
-                  if (data && Array.isArray(data)) {
+                  if (Array.isArray(data)) {
+                    console.log(`🔍 Processing ${data.length} results from batch`);
                     data.forEach((result, idx) => {
                       if (result.error) {
+                        console.error(`❌ Email ${idx + 1} failed:`, result.error);
                         errorCount++;
                         failedEmails.push({ email: batch[idx], error: result.error });
                       } else {
@@ -342,13 +358,25 @@ export async function POST(request) {
                       }
                     });
                   } else {
-                    // If no detailed results, assume all succeeded
-                    sentCount += batch.length;
+                    // If response is not an array, check if it's a single success response
+                    console.log(`🔍 Non-array response:`, JSON.stringify(data, null, 2));
+                    if (data.id || data.success !== false) {
+                      // Assume success if we got a response without error
+                      sentCount += batch.length;
+                    } else {
+                      errorCount += batch.length;
+                      batch.forEach(email => failedEmails.push({ email, error: 'Unknown response format' }));
+                    }
                   }
-                  console.log(`✅ Batch ${batchIndex + 1} completed`);
+                  console.log(`✅ Batch ${batchIndex + 1} completed: ${sentCount - (sentCount - errorCount)} sent so far`);
+                } else {
+                  console.error(`❌ Batch ${batchIndex + 1}: No data or error returned`);
+                  errorCount += batch.length;
+                  batch.forEach(email => failedEmails.push({ email, error: 'No response from API' }));
                 }
               } catch (batchErr) {
                 console.error(`❌ Batch ${batchIndex + 1} exception:`, batchErr);
+                console.error(`❌ Exception stack:`, batchErr.stack);
                 errorCount += batch.length;
                 batch.forEach(email => failedEmails.push({ email, error: batchErr.message || 'Exception during batch send' }));
               }
