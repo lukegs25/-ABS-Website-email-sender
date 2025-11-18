@@ -3,8 +3,9 @@ import { getResendClient } from "@/lib/resend";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { getAdminSession, filterAudiencesByAdmin, filterAudienceIdsFromRows } from "@/lib/auth-helpers";
 
-// Set maximum function duration to 60 seconds (Vercel Hobby plan limit)
-export const maxDuration = 60;
+// Set maximum function duration to 300 seconds (5 minutes - requires Vercel Pro)
+// If on Hobby plan, this will use 60 seconds max
+export const maxDuration = 300;
 
 // Audience ID mappings from resend_sample.txt
 const AUDIENCE_MAP = {
@@ -283,16 +284,17 @@ export async function POST(request) {
             // Helper to add delay to respect rate limits
             const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-            // Process emails in batches of 100 for rate limiting
-            // But send each email individually (not using batch API which has issues)
-            const BATCH_SIZE = 100;
+            // Process emails in batches to avoid rate limiting
+            // Resend Pro allows 10 requests/second
+            // We'll send 30 at a time with 3-second delays to stay under limit
+            const BATCH_SIZE = 30;
             const batches = [];
             for (let i = 0; i < emails.length; i += BATCH_SIZE) {
               batches.push(emails.slice(i, i + BATCH_SIZE));
             }
 
             console.log(`📦 Processing in ${batches.length} batch(es) of up to ${BATCH_SIZE} emails each`);
-            console.log(`⏱️  Estimated time: ~${batches.length * 3}s`);
+            console.log(`⏱️  Estimated time: ~${batches.length * 3}s (staying under 10 req/sec limit)`);
 
             const emailTemplate = `
               <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
@@ -366,15 +368,24 @@ export async function POST(request) {
                 batch.forEach(email => failedEmails.push({ email, error: batchErr.message || 'Exception during send' }));
               }
               
-              // Wait 200ms before next batch to respect rate limits
+              // Wait 3 seconds before next batch to respect Resend's 10 req/sec limit
+              // 30 emails in 3 seconds = 10 emails/second average
               if (batchIndex < batches.length - 1) {
-                await delay(200);
+                await delay(3000);
               }
             }
 
             console.log(`📊 Final results: ${sentCount} sent successfully, ${errorCount} failed out of ${emails.length} total`);
             if (failedEmails.length > 0) {
               console.log(`❌ First 10 failures:`, failedEmails.slice(0, 10));
+              
+              // Analyze error patterns
+              const errorTypes = {};
+              failedEmails.forEach(f => {
+                const errorMsg = f.error || 'Unknown error';
+                errorTypes[errorMsg] = (errorTypes[errorMsg] || 0) + 1;
+              });
+              console.log(`📊 Error breakdown:`, errorTypes);
             }
 
             // Determine if the send was successful overall
