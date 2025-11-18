@@ -423,14 +423,30 @@ export default function EmailComposer({ initialData = {} }) {
           </div>
 
           <div className="space-y-4">
-            {results.results.map((result, index) => (
+            {results.results.map((result, index) => {
+              // Determine card styling based on actual results
+              const allSuccess = result.errorCount === 0 && result.sentCount > 0;
+              const allFailed = result.sentCount === 0 && result.errorCount > 0;
+              const partialSuccess = result.sentCount > 0 && result.errorCount > 0;
+              
+              let cardClass, headerClass;
+              if (allFailed || !result.success) {
+                cardClass = 'border-red-300 bg-white';
+                headerClass = 'bg-red-100';
+              } else if (partialSuccess) {
+                cardClass = 'border-yellow-300 bg-white';
+                headerClass = 'bg-yellow-50';
+              } else {
+                cardClass = 'border-green-300 bg-white';
+                headerClass = 'bg-green-50';
+              }
+              
+              return (
               <div 
                 key={index} 
-                className={`rounded-lg border-2 overflow-hidden ${
-                  result.success ? 'border-green-300 bg-white' : 'border-red-300 bg-red-50'
-                }`}
+                className={`rounded-lg border-2 overflow-hidden ${cardClass}`}
               >
-                <div className={`p-4 ${result.success ? 'bg-green-50' : 'bg-red-100'}`}>
+                <div className={`p-4 ${headerClass}`}>
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h4 className="text-lg font-semibold text-gray-800">
@@ -438,17 +454,35 @@ export default function EmailComposer({ initialData = {} }) {
                       </h4>
                       {result.success ? (
                         <div className="mt-1 space-y-1">
-                          <p className="text-green-700 font-medium">
-                            Sent successfully to {result.emailsSent?.length || result.recipientCount || 0} recipients
-                          </p>
+                          {result.sentCount !== undefined ? (
+                            <>
+                              {result.errorCount === 0 ? (
+                                <p className="text-green-700 font-medium text-lg">
+                                  ✅ Successfully sent to all {result.sentCount} recipients!
+                                </p>
+                              ) : result.sentCount > 0 ? (
+                                <div className="space-y-1">
+                                  <p className="text-yellow-700 font-medium text-lg">
+                                    ⚠️ Partially successful: {result.sentCount} sent, {result.errorCount} failed
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    Out of {result.recipientCount} total recipients
+                                  </p>
+                                </div>
+                              ) : (
+                                <p className="text-red-700 font-medium text-lg">
+                                  ❌ All {result.errorCount} emails failed to send
+                                </p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-green-700 font-medium">
+                              Sent successfully to {result.emailsSent?.length || result.recipientCount || 0} recipients
+                            </p>
+                          )}
                           {result.testMode && (
                             <p className="text-sm text-orange-600 font-medium">
                               TEST MODE - Sample recipients only
-                            </p>
-                          )}
-                          {result.sentCount !== undefined && result.errorCount > 0 && (
-                            <p className="text-sm text-yellow-600">
-                              {result.sentCount} sent, {result.errorCount} failed
                             </p>
                           )}
                         </div>
@@ -502,7 +536,8 @@ export default function EmailComposer({ initialData = {} }) {
                   </details>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
