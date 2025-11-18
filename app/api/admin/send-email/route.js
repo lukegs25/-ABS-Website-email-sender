@@ -279,17 +279,21 @@ export async function POST(request) {
             
             let sentCount = 0;
             let errorCount = 0;
+            const sentEmails = [];
             const failedEmails = [];
 
-            // Split into smaller BCC batches to avoid limits
-            // Using 50 per BCC to be conservative (Resend may have BCC limits)
-            const BCC_BATCH_SIZE = 50;
+            // Resend hard-limits total recipients (to + cc + bcc) to 50.
+            // We must include one address in the "to" field, so BCC can only contain 49 recipients.
+            const MAX_TOTAL_RECIPIENTS = 50;
+            const REQUIRED_TO_RECIPIENT = 'no-reply@aiinbusinesssociety.org';
+            const BCC_BATCH_SIZE = MAX_TOTAL_RECIPIENTS - 1; // 49
+
             const bccBatches = [];
             for (let i = 0; i < emails.length; i += BCC_BATCH_SIZE) {
               bccBatches.push(emails.slice(i, i + BCC_BATCH_SIZE));
             }
 
-            console.log(`📦 Sending ${bccBatches.length} BCC emails (~${BCC_BATCH_SIZE} recipients each)`);
+            console.log(`📦 Sending ${bccBatches.length} BCC emails (${BCC_BATCH_SIZE} recipients max each)`);
 
             const emailTemplate = `
               <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
@@ -307,13 +311,14 @@ export async function POST(request) {
 
             // Send each BCC batch
             for (let i = 0; i < bccBatches.length; i++) {
+              const batch = bccBatches[i];
               try {
-                console.log(`📨 Sending BCC batch ${i + 1}/${bccBatches.length} (${bccBatches[i].length} recipients)`);
+                console.log(`📨 Sending BCC batch ${i + 1}/${bccBatches.length} (${batch.length} recipients)`);
                 
                 const { data, error } = await resend.emails.send({
                   from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
-                  to: ['no-reply@aiinbusinesssociety.org'],
-                  bcc: bccBatches[i],
+                  to: [REQUIRED_TO_RECIPIENT],
+                  bcc: batch,
                   subject: subject,
                   html: emailTemplate,
                   ...(attachments && attachments.length > 0 ? { attachments } : {})
@@ -323,15 +328,16 @@ export async function POST(request) {
                   throw new Error(error.message || JSON.stringify(error));
                 }
                 
-                sentCount += bccBatches[i].length;
+                sentCount += batch.length;
+                sentEmails.push(...batch);
                 console.log(`✅ BCC batch ${i + 1}/${bccBatches.length} sent successfully`);
                 
               } catch (err) {
                 console.error(`❌ BCC batch ${i + 1} failed:`, err.message);
                 console.error(`❌ Full error object:`, JSON.stringify(err, null, 2));
                 console.error(`❌ Error stack:`, err.stack);
-                errorCount += bccBatches[i].length;
-                bccBatches[i].forEach(email => {
+                errorCount += batch.length;
+                batch.forEach(email => {
                   failedEmails.push({ email, error: err.message });
                 });
               }
@@ -347,12 +353,12 @@ export async function POST(request) {
             results.push({
               audienceId,
               audienceName: audienceInfo.name,
-              success: sentCount > 0,
+              success: sentCount === emails.length,
               recipientCount: emails.length,
               sentCount,
               errorCount,
               method: 'bcc-batch',
-              emailsSent: sentCount > 0 ? emails.slice(0, sentCount) : [],
+              emailsSent: sentEmails,
               failedEmails: failedEmails.length > 0 ? failedEmails : undefined
             });
           }
