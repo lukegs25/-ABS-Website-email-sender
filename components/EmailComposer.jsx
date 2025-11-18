@@ -370,6 +370,10 @@ export default function EmailComposer({ initialData = {} }) {
           <p className="text-sm text-gray-500 mt-2">
             Selected: {formData.audienceIds.length} audience{formData.audienceIds.length !== 1 ? 's' : ''} out of {filteredAudiences.length} available
           </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Counts shown per audience include overlaps. The system automatically removes duplicates,
+            so the unique recipient total may be less than the sum of individual audience counts.
+          </p>
         </div>
 
         {/* Submit Button */}

@@ -424,42 +424,43 @@ async function sendCampaignConfirmation(adminEmail, campaignDetails, results) {
     
     // Calculate totals
     const totalAudiences = results.length;
-    const successfulAudiences = results.filter(r => r.success).length;
-    const failedAudiences = results.filter(r => r.error).length;
     
-    let totalRecipients = 0;
+    let totalRecipientsTargeted = 0;
     let totalSent = 0;
     let totalErrors = 0;
+    const uniqueRecipientsSet = new Set();
     
     results.forEach(r => {
-      if (r.recipientCount) totalRecipients += r.recipientCount;
-      if (r.sentCount !== undefined) totalSent += r.sentCount;
+      if (r.recipientCount) totalRecipientsTargeted += r.recipientCount;
+      if (r.sentCount) totalSent += r.sentCount;
       if (r.errorCount) totalErrors += r.errorCount;
+      if (Array.isArray(r.emailsSent)) {
+        r.emailsSent.forEach(email => uniqueRecipientsSet.add(email));
+      }
     });
     
-    // If sentCount wasn't tracked, use recipientCount for successful sends
-    if (totalSent === 0 && successfulAudiences > 0) {
-      totalSent = totalRecipients;
-    }
+    const uniqueRecipientsCount = uniqueRecipientsSet.size || totalSent;
+    const successfulAudiences = results.filter(r => r.sentCount === r.recipientCount).length;
+    const partiallyFailedAudiences = results.filter(r => r.errorCount > 0 && r.sentCount > 0).length;
+    const failedAudiences = results.filter(r => r.sentCount === 0).length;
 
     // Build audience breakdown HTML
     let audienceBreakdownHtml = '';
     
     results.forEach(result => {
       const isSuccess = result.success;
-      const hasError = result.error;
+      const hasFailures = result.errorCount > 0;
       
       audienceBreakdownHtml += `
-        <div style="margin-bottom: 25px; padding: 15px; background-color: ${isSuccess ? '#f0f9ff' : '#fff5f5'}; border-left: 4px solid ${isSuccess ? '#3b82f6' : '#ef4444'}; border-radius: 4px;">
-          <h3 style="margin: 0 0 10px 0; color: ${isSuccess ? '#1e40af' : '#991b1b'}; font-size: 16px;">
+        <div style="margin-bottom: 25px; padding: 15px; background-color: ${hasFailures ? '#fff5f5' : '#f0f9ff'}; border-left: 4px solid ${hasFailures ? '#ef4444' : '#3b82f6'}; border-radius: 4px;">
+          <h3 style="margin: 0 0 10px 0; color: ${hasFailures ? '#991b1b' : '#1e40af'}; font-size: 16px;">
             ${result.audienceName || 'Unknown Audience'}
             ${result.testMode ? ' <span style="background-color: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 3px; font-size: 12px;">TEST</span>' : ''}
           </h3>
           
-          ${isSuccess ? `
+          ${!hasFailures ? `
             <p style="margin: 5px 0; color: #059669; font-weight: bold;">
-              ✓ Successfully sent to ${result.recipientCount || 0} recipient(s)
-              ${result.errorCount ? ` (${result.errorCount} failed)` : ''}
+              ✓ Successfully sent to all ${result.sentCount || result.recipientCount || 0} recipient(s)
             </p>
             
             ${result.emailsSent && result.emailsSent.length > 0 ? `
@@ -474,10 +475,10 @@ async function sendCampaignConfirmation(adminEmail, campaignDetails, results) {
             ` : ''}
           ` : `
             <p style="margin: 5px 0; color: #dc2626; font-weight: bold;">
-              ✗ Failed to send
+              ⚠ Partial delivery: ${result.sentCount || 0} sent, ${result.errorCount || 0} failed
             </p>
             <p style="margin: 5px 0; color: #991b1b; font-size: 14px;">
-              Error: ${hasError || 'Unknown error'}
+              Some recipients failed to deliver. Check Vercel logs for details.
             </p>
           `}
         </div>
@@ -531,18 +532,27 @@ async function sendCampaignConfirmation(adminEmail, campaignDetails, results) {
                 <div style="color: #6b7280; font-size: 14px; margin-top: 5px;">Total Audiences</div>
               </div>
               <div style="padding: 15px; background-color: #f0fdf4; border-radius: 6px; text-align: center;">
-                <div style="font-size: 32px; font-weight: bold; color: #059669;">${totalSent}</div>
-                <div style="color: #6b7280; font-size: 14px; margin-top: 5px;">Emails Sent</div>
+                <div style="font-size: 32px; font-weight: bold; color: #059669;">${uniqueRecipientsCount}</div>
+                <div style="color: #6b7280; font-size: 14px; margin-top: 5px;">Unique Recipients</div>
               </div>
-              <div style="padding: 15px; background-color: ${successfulAudiences > 0 ? '#f0fdf4' : '#fef2f2'}; border-radius: 6px; text-align: center;">
-                <div style="font-size: 32px; font-weight: bold; color: ${successfulAudiences > 0 ? '#059669' : '#dc2626'};">${successfulAudiences}</div>
-                <div style="color: #6b7280; font-size: 14px; margin-top: 5px;">Successful</div>
+              <div style="padding: 15px; background-color: #ecfeff; border-radius: 6px; text-align: center;">
+                <div style="font-size: 32px; font-weight: bold; color: #0891b2;">${totalRecipientsTargeted}</div>
+                <div style="color: #6b7280; font-size: 14px; margin-top: 5px;">Total Recipients Targeted</div>
               </div>
-              <div style="padding: 15px; background-color: ${totalErrors > 0 ? '#fef2f2' : '#f9fafb'}; border-radius: 6px; text-align: center;">
-                <div style="font-size: 32px; font-weight: bold; color: ${totalErrors > 0 ? '#dc2626' : '#6b7280'};">${totalErrors}</div>
-                <div style="color: #6b7280; font-size: 14px; margin-top: 5px;">Failed</div>
+              <div style="padding: 15px; background-color: ${totalErrors > 0 ? '#fef2f2' : '#f0fdf4'}; border-radius: 6px; text-align: center;">
+                <div style="font-size: 32px; font-weight: bold; color: ${totalErrors > 0 ? '#dc2626' : '#059669'};">${totalSent}</div>
+                <div style="color: #6b7280; font-size: 14px; margin-top: 5px;">Emails Delivered</div>
               </div>
             </div>
+            ${totalErrors > 0 ? `
+              <p style="margin-top: 15px; color: #b45309; font-size: 14px;">
+                ⚠ ${totalErrors} recipients failed to deliver. Check the audience breakdown below for details.
+              </p>
+            ` : `
+              <p style="margin-top: 15px; color: #059669; font-size: 14px;">
+                ✅ All audiences delivered successfully.
+              </p>
+            `}
           </div>
           
           <!-- Audience Breakdown -->
