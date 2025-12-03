@@ -126,6 +126,68 @@ The AI in Business Society Team</p>
 
 <p>Looking forward to seeing you there!</p>
     `.trim()
+  },
+  quick_update: {
+    name: "Quick Update",
+    subject: "ABS Quick Update: [UPDATE_TITLE]",
+    content: `
+<h2>Quick Update: [UPDATE_TITLE]</h2>
+
+<p>Hi everyone!</p>
+
+<p>[UPDATE_CONTENT]</p>
+
+<h3>📌 Key Points:</h3>
+<ul>
+  <li>[KEY_POINT_1]</li>
+  <li>[KEY_POINT_2]</li>
+  <li>[KEY_POINT_3]</li>
+</ul>
+
+<h3>🎯 Action Items:</h3>
+<p>[ACTION_ITEMS]</p>
+
+<h3>📅 Important Dates:</h3>
+<p>[IMPORTANT_DATES]</p>
+
+<p>If you have any questions, feel free to reach out!</p>
+
+<p>Best regards,<br>
+The ABS Team</p>
+    `.trim()
+  },
+  meeting_recap: {
+    name: "Meeting Recap",
+    subject: "Meeting Recap: [MEETING_NAME] - [MEETING_DATE]",
+    content: `
+<h2>Meeting Recap: [MEETING_NAME]</h2>
+
+<div style="background-color: #f0f8ff; padding: 15px; border-left: 4px solid #002e5d; margin: 20px 0;">
+  <p><strong>📅 Date:</strong> [MEETING_DATE] | <strong>📍 Location:</strong> [MEETING_LOCATION]</p>
+  <p><strong>👥 Attendees:</strong> [ATTENDEES]</p>
+</div>
+
+<h3>📋 Summary:</h3>
+<p>[MEETING_SUMMARY]</p>
+
+<h3>💬 Key Points & Decisions:</h3>
+<ul>
+  <li>[KEY_POINT_1]</li>
+  <li>[KEY_POINT_2]</li>
+  <li>[KEY_POINT_3]</li>
+</ul>
+
+<h3>📝 Action Items:</h3>
+<ul>
+  <li><strong>[ACTION_ITEM_1]</strong> - [ASSIGNEE_1]</li>
+  <li><strong>[ACTION_ITEM_2]</strong> - [ASSIGNEE_2]</li>
+</ul>
+
+<p>Thanks to everyone who attended! Questions? Feel free to reach out.</p>
+
+<p>Best regards,<br>
+The ABS Team</p>
+    `.trim()
   }
 };
 
@@ -376,7 +438,7 @@ export default function EmailTemplates({ onUseTemplate }) {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         {field.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}:
                       </label>
-                      {field.includes('DESCRIPTION') || field.includes('NEWS') || field.includes('OPPORTUNITIES') || field.includes('SPOTLIGHT') ? (
+                      {field.includes('DESCRIPTION') || field.includes('NEWS') || field.includes('OPPORTUNITIES') || field.includes('SPOTLIGHT') || field.includes('SUMMARY') || field.includes('CONTENT') || field.includes('ACTION_ITEMS') || field.includes('NEXT_STEPS') || field.includes('ATTENDEES') || field.includes('IMPORTANT_DATES') ? (
                         <textarea
                           value={customFields[field]}
                           onChange={(e) => handleFieldChange(field, e.target.value)}
