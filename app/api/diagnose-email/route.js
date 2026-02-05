@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getResendClient } from "@/lib/resend";
 import { getSupabaseServerClient } from "@/lib/supabase";
+import { getEmailAddressWithFallback } from "@/lib/email-config";
 
 /**
  * Comprehensive Email System Diagnostic Endpoint
@@ -95,7 +96,7 @@ export async function GET(request) {
       const testEmail = 'lukegsine@gmail.com'; // Send to admin
       
       const { data, error } = await resend.emails.send({
-        from: 'ABS Diagnostics <no-reply@aiinbusinesssociety.org>',
+        from: getEmailAddressWithFallback('diagnostics'),
         to: [testEmail],
         subject: '🔍 Email System Diagnostic Test',
         html: `
@@ -137,15 +138,16 @@ export async function GET(request) {
   try {
     const resend = getResendClient();
     if (resend) {
+      const diagnosticsFrom = getEmailAddressWithFallback('diagnostics');
       const batchPayload = [
         {
-          from: 'ABS Diagnostics <no-reply@aiinbusinesssociety.org>',
+          from: diagnosticsFrom,
           to: ['lukegsine@gmail.com'],
           subject: '🔍 Batch Test Email #1',
           html: '<p>This is batch test email #1</p>'
         },
         {
-          from: 'ABS Diagnostics <no-reply@aiinbusinesssociety.org>',
+          from: diagnosticsFrom,
           to: ['lukegsine@gmail.com'],
           subject: '🔍 Batch Test Email #2',
           html: '<p>This is batch test email #2</p>'

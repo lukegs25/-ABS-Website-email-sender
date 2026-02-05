@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { getResendClient } from "@/lib/resend";
+import { getEmailAddressWithFallback } from "@/lib/email-config";
 
 // POST /api/subscribers - Create new subscriber(s) with notification
 export async function POST(request) {
@@ -114,8 +115,8 @@ async function sendNotificationEmail(subscriberEmail, subscriberData, audiences)
     const major = subscriberData.major || 'Not specified';
 
     await resend.emails.send({
-      from: 'ABS Notifications <no-reply@aiinbusinesssociety.org>',
-      to: 'lukegsine@gmail.com',
+      from: getEmailAddressWithFallback('notifications'),
+      to: 'reedwebster7284@gmail.com',
       subject: '🎉 New AI in Business Society Signup!',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -137,7 +138,7 @@ async function sendNotificationEmail(subscriberEmail, subscriberData, audiences)
       `
     });
 
-    console.log(`Notification email sent to lukegsine@gmail.com for new subscriber: ${subscriberEmail}`);
+    console.log(`Notification email sent to reedwebster7284@gmail.com for new subscriber: ${subscriberEmail}`);
   } catch (error) {
     console.error('Error sending notification email:', error);
     // Don't throw - we don't want to fail the subscription if notification fails

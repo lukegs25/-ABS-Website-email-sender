@@ -52,11 +52,11 @@ export default function EmailComposer({ initialData = {} }) {
       });
       setFilteredAudiences(allowedAudiences);
       
-      // Clear any selected audiences that are no longer available
+      // Clear any selected audience that is no longer available (only one at a time)
       const allowedIds = allowedAudiences.map(a => a.id);
       setFormData(prev => ({
         ...prev,
-        audienceIds: prev.audienceIds.filter(id => allowedIds.includes(id))
+        audienceIds: prev.audienceIds.filter(id => allowedIds.includes(id)).slice(0, 1)
       }));
     }
   }, [audiences, adminSession]);
@@ -82,18 +82,10 @@ export default function EmailComposer({ initialData = {} }) {
   const handleAudienceToggle = (audienceId) => {
     setFormData(prev => ({
       ...prev,
+      // Only one audience at a time: select this one or clear if already selected
       audienceIds: prev.audienceIds.includes(audienceId)
-        ? prev.audienceIds.filter(id => id !== audienceId)
-        : [...prev.audienceIds, audienceId]
-    }));
-  };
-
-  const handleSelectAll = () => {
-    setFormData(prev => ({
-      ...prev,
-      audienceIds: prev.audienceIds.length === filteredAudiences.length 
-        ? [] 
-        : filteredAudiences.map(a => a.id)
+        ? []
+        : [audienceId]
     }));
   };
 
@@ -328,36 +320,37 @@ export default function EmailComposer({ initialData = {} }) {
           <div className="flex justify-between items-center mb-3">
             <label className="block text-sm font-medium text-gray-700">
               Select Audiences
+              <span className="ml-2 text-xs text-gray-500 font-normal">(Only send one at a time)</span>
               {adminSession && !adminSession.isSuperAdmin && (
                 <span className="ml-2 text-xs text-gray-500 font-normal">
                   (Showing only your assigned audiences)
                 </span>
               )}
             </label>
-            <button
-              type="button"
-              onClick={handleSelectAll}
-              className="text-sm text-[color:var(--byu-blue)] hover:underline"
-            >
-              {formData.audienceIds.length === filteredAudiences.length ? 'Deselect All' : 'Select All'}
-            </button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 border border-gray-200 rounded-md">
-            {filteredAudiences.map((audience) => (
-              <label key={audience.id} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.audienceIds.includes(audience.id)}
-                  onChange={() => handleAudienceToggle(audience.id)}
-                  className="h-4 w-4 text-[color:var(--byu-blue)] border-gray-300 rounded focus:ring-[color:var(--byu-blue)]"
-                />
-                <span className="text-sm">
-                  <strong>{audience.name}</strong> 
-                  <span className="text-gray-500"> ({audience.subscriberCount} subscribers)</span>
-                </span>
-              </label>
-            ))}
+            {filteredAudiences.map((audience) => {
+              const isMainAbs = audience.name && audience.name.toLowerCase().includes('ai in business society');
+              return (
+                <label key={audience.id} className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="audienceSelect"
+                    checked={formData.audienceIds.includes(audience.id)}
+                    onChange={() => handleAudienceToggle(audience.id)}
+                    className="h-4 w-4 text-[color:var(--byu-blue)] border-gray-300 focus:ring-[color:var(--byu-blue)]"
+                  />
+                  <span className="text-sm">
+                    <strong>{audience.name}</strong>
+                    {isMainAbs && (
+                      <span className="ml-1 text-amber-600 font-normal">Don&apos;t send if you are a subgroup.</span>
+                    )}
+                    <span className="text-gray-500"> ({audience.subscriberCount} subscribers)</span>
+                  </span>
+                </label>
+              );
+            })}
             {filteredAudiences.length === 0 && !loading && (
               <div className="col-span-2 text-center text-gray-500 py-4">
                 {adminSession && !adminSession.isSuperAdmin 
@@ -368,7 +361,7 @@ export default function EmailComposer({ initialData = {} }) {
             )}
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            Selected: {formData.audienceIds.length} audience{formData.audienceIds.length !== 1 ? 's' : ''} out of {filteredAudiences.length} available
+            Selected: {formData.audienceIds.length === 0 ? '0' : '1'} audience out of {filteredAudiences.length} available. Only send one at a time.
           </p>
           <p className="text-xs text-gray-500 mt-1">
             Counts shown per audience include overlaps. The system automatically removes duplicates,

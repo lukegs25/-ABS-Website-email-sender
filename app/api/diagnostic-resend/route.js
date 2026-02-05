@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getResendClient } from "@/lib/resend";
 import { getSupabaseServerClient } from "@/lib/supabase";
+import { getEmailAddressWithFallback } from "@/lib/email-config";
 
 export async function GET() {
   const diagnosticResults = {
@@ -90,7 +91,7 @@ export async function GET() {
       
       console.log('📧 Sending test email to:', testEmail);
       const { data, error } = await resend.emails.send({
-        from: 'ABS Diagnostics <no-reply@aiinbusinesssociety.org>',
+        from: getEmailAddressWithFallback('diagnostics'),
         to: [testEmail],
         subject: '🔍 Resend Diagnostic Test',
         html: `
@@ -147,8 +148,9 @@ export async function GET() {
     try {
       const testEmails = ['lukegsine@gmail.com', 'lukegsine@gmail.com'];
       
+      const diagnosticsFrom = getEmailAddressWithFallback('diagnostics');
       const batchPayload = testEmails.map(email => ({
-        from: 'ABS Diagnostics <no-reply@aiinbusinesssociety.org>',
+        from: diagnosticsFrom,
         to: [email],
         subject: '🔍 Resend Batch Diagnostic Test',
         html: `

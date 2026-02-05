@@ -1,7 +1,7 @@
 # Email Notification Feature - Summary
 
 ## What Was Requested
-> "I want to know everytime someone signs up for the ai in business society email, send an email to lukegsine@gmail.com everytime someone is added to that group"
+> "I want to know everytime someone signs up for the ai in business society email, send an email to reedwebster7284@gmail.com everytime someone is added to that group"
 
 ## ✅ Implementation Complete
 
@@ -10,7 +10,7 @@
 1. **New API Endpoint** (`/app/api/subscribers/route.js`)
    - Centralized subscriber signup handler
    - Automatic notification system for main audience signups
-   - Sends formatted email to `lukegsine@gmail.com` with subscriber details
+   - Sends formatted email to `reedwebster7284@gmail.com` with subscriber details
 
 2. **Updated Forms**
    - `components/forms/StudentForm.jsx` - Now uses new API endpoint
@@ -83,7 +83,7 @@ Follow the guide in `TESTING_NOTIFICATIONS.md`:
 1. Go to `/student` or `/teacher` on your site
 2. Fill out the form and check "AI in Business Society Email"
 3. Submit
-4. Check `lukegsine@gmail.com` for notification
+4. Check `reedwebster7284@gmail.com` for notification
 
 #### 3. Deploy (if needed)
 ```bash
@@ -129,7 +129,7 @@ If your audience has a different name in the database, you may need to adjust th
 
 1. ✅ **Feature is complete and ready to use**
 2. 🧪 Test with a signup on your site
-3. 📧 Verify you receive the notification at `lukegsine@gmail.com`
+3. 📧 Verify you receive the notification at `reedwebster7284@gmail.com`
 4. 🔧 Adjust the "from" address if needed (for your verified domain)
 5. 🚀 Deploy to production when ready
 
@@ -137,7 +137,7 @@ If your audience has a different name in the database, you may need to adjust th
 
 ## Summary
 
-You now have automatic email notifications set up! Every time someone signs up for the AI in Business Society email list, you'll receive a detailed notification at `lukegsine@gmail.com` with all their information.
+You now have automatic email notifications set up! Every time someone signs up for the AI in Business Society email list, you'll receive a detailed notification at `reedwebster7284@gmail.com` with all their information.
 
 The feature is:
 - ✅ Built and tested (build successful)

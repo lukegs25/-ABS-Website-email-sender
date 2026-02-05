@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getResendClient } from "@/lib/resend";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { getAdminSession, filterAudiencesByAdmin, filterAudienceIdsFromRows } from "@/lib/auth-helpers";
+import { getEmailAddressWithFallback } from "@/lib/email-config";
 
 // Set maximum function duration to 300 seconds (5 minutes - requires Vercel Pro)
 // If on Hobby plan, this will use 60 seconds max
@@ -129,7 +130,7 @@ export async function POST(request) {
             
             // Use batch API even for test mode to ensure privacy
             const batchPayload = emails.map(email => ({
-              from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
+              from: getEmailAddressWithFallback('newsletter', fromName),
               to: [email],
               subject: `[TEST] ${subject}`,
               html: `
@@ -206,7 +207,7 @@ export async function POST(request) {
             console.log(`📡 Sending via Resend Broadcast to audience: ${audienceInfo.name} (${normalizedResendId})`);
             const broadcastPayload = {
               audienceId: normalizedResendId,
-              from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
+              from: getEmailAddressWithFallback('newsletter', fromName),
               subject: subject,
               html: `
                 <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
@@ -285,7 +286,9 @@ export async function POST(request) {
             // Resend hard-limits total recipients (to + cc + bcc) to 50.
             // We must include one address in the "to" field, so BCC can only contain 49 recipients.
             const MAX_TOTAL_RECIPIENTS = 50;
-            const REQUIRED_TO_RECIPIENT = 'no-reply@aiinbusinesssociety.org';
+            // Extract email from noreply config for the required "to" recipient
+            const noreplyAddress = getEmailAddressWithFallback('noreply');
+            const REQUIRED_TO_RECIPIENT = noreplyAddress.match(/<(.+)>/)?.[1] || 'no-reply@aiinbusinesssociety.org';
             const BCC_BATCH_SIZE = MAX_TOTAL_RECIPIENTS - 1; // 49
 
             const bccBatches = [];
@@ -316,7 +319,7 @@ export async function POST(request) {
                 console.log(`📨 Sending BCC batch ${i + 1}/${bccBatches.length} (${batch.length} recipients)`);
                 
                 const { data, error } = await resend.emails.send({
-                  from: `${fromName} <no-reply@aiinbusinesssociety.org>`,
+                  from: getEmailAddressWithFallback('newsletter', fromName),
                   to: [REQUIRED_TO_RECIPIENT],
                   bcc: batch,
                   subject: subject,
@@ -491,7 +494,7 @@ async function sendCampaignConfirmation(adminEmail, campaignDetails, results) {
     console.log(`📨 Preparing confirmation email to ${adminEmail} for campaign: "${subject}"`);
     
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: 'ABS Campaign Reports <no-reply@aiinbusinesssociety.org>',
+      from: getEmailAddressWithFallback('reports'),
       to: adminEmail,
       subject: `${testMode ? '🧪 [TEST]' : '✅'} Campaign Sent: ${subject}`,
       html: `
@@ -604,30 +607,34 @@ export async function GET() {
       .from('audiences')
       .select('id, name');
 
-    // NOTE: Supabase has a default limit of 1000 rows. We use range(0, 9999) to fetch up to 10,000 subscribers.
-    // If you expect more than 10,000 subscribers, increase the range or implement pagination.
-    const { data: subs } = await supabase
-      .from('new_subscribers')
-      .select('audience_id')
-      .range(0, 9999);
+    const audienceList = rows || [];
 
-    const countMap = {};
-    subs?.forEach(sub => {
-      countMap[sub.audience_id] = (countMap[sub.audience_id] || 0) + 1;
+    // Fetch accurate per-audience counts from Supabase (no row limit)
+    const countPromises = audienceList.map(async (r) => {
+      const { count, error } = await supabase
+        .from('new_subscribers')
+        .select('*', { count: 'exact', head: true })
+        .eq('audience_id', r.id);
+      if (error) return { id: r.id, count: 0 };
+      return { id: r.id, count: count ?? 0 };
     });
+    const countResults = await Promise.all(countPromises);
+    const countMap = Object.fromEntries(countResults.map(({ id, count }) => [id, count]));
 
-    let audiences = (rows || []).map(r => ({
+    let audiences = audienceList.map(r => ({
       id: r.id,
       name: r.name,
-      subscriberCount: countMap[r.id] || 0
+      subscriberCount: countMap[r.id] ?? 0
     })).sort((a, b) => a.id - b.id);
 
     // Filter audiences by admin tokens (IDs or names)
     audiences = filterAudiencesByAdmin(session, audiences);
 
+    const totalSubscribers = audiences.reduce((sum, a) => sum + a.subscriberCount, 0);
+
     return NextResponse.json({
       audiences,
-      totalSubscribers: Object.values(countMap).reduce((sum, count) => sum + count, 0)
+      totalSubscribers
     });
 
   } catch (error) {
