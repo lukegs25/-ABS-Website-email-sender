@@ -44,7 +44,7 @@ export default function HomePage() {
 
         <div className="mt-4 text-lg sm:text-xl">
           <a
-            href="https://clubs.byu.edu/p/clubview/18295873491185562"
+            href="https://clubs.byu.edu/link/club/18295873491185562"
             target="_blank"
             rel="noreferrer"
             className="inline-block text-[color:var(--byu-blue)] underline bg-white/70 backdrop-blur-sm rounded px-2 py-1 shadow-sm"

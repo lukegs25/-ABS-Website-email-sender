@@ -81,7 +81,7 @@ The ABS Team</p>
   </a>
 </p>
 <p>
-  <a href="https://clubs.byu.edu/p/clubview/18295873491185562" style="color: #002e5d; text-decoration: underline;">
+  <a href="https://clubs.byu.edu/link/club/18295873491185562" style="color: #002e5d; text-decoration: underline;">
     🏫 Visit our BYU club page
   </a>
 </p>
