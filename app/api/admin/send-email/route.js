@@ -353,17 +353,28 @@ export async function POST(request) {
 
             console.log(`📊 Final: ${sentCount} sent, ${errorCount} failed out of ${emails.length}`);
 
-            results.push({
+            // Build result object
+            const resultObj = {
               audienceId,
               audienceName: audienceInfo.name,
-              success: sentCount === emails.length,
+              success: sentCount > 0,
               recipientCount: emails.length,
               sentCount,
               errorCount,
               method: 'bcc-batch',
               emailsSent: sentEmails,
               failedEmails: failedEmails.length > 0 ? failedEmails : undefined
-            });
+            };
+
+            // Add error message if any emails failed
+            if (errorCount > 0) {
+              const firstError = failedEmails[0]?.error || 'Unknown error';
+              resultObj.error = sentCount === 0 
+                ? `All ${errorCount} emails failed: ${firstError}`
+                : `${errorCount} of ${emails.length} emails failed: ${firstError}`;
+            }
+
+            results.push(resultObj);
           }
         }
       } catch (error) {
