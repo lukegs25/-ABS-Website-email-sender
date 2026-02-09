@@ -190,15 +190,23 @@ export default function EmailComposer({ initialData = {} }) {
         ? await convertFilesToBase64(attachments)
         : [];
 
+      // Check payload size before sending (Vercel limit is ~4.5MB)
+      const payload = JSON.stringify({
+        ...formData,
+        attachments: attachmentData
+      });
+      const payloadSizeMB = new Blob([payload]).size / (1024 * 1024);
+      
+      if (payloadSizeMB > 4) {
+        throw new Error(`Request too large (${payloadSizeMB.toFixed(2)}MB). Please reduce attachment sizes to under 3MB total.`);
+      }
+
       const response = await fetch('/api/admin/send-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          attachments: attachmentData
-        }),
+        body: payload,
       });
 
       // Try to parse as JSON, but handle non-JSON responses
@@ -213,6 +221,11 @@ export default function EmailComposer({ initialData = {} }) {
         console.error('Non-JSON response:', text);
         console.error('Response status:', response.status);
         console.error('Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        // Handle 413 Payload Too Large specifically
+        if (response.status === 413 || text.includes('FUNCTION_PAYLOAD_TOO_LARGE')) {
+          throw new Error('Request too large. Please reduce attachment sizes to under 3MB total, or send without attachments.');
+        }
         
         // Show first 200 chars of the error
         const preview = text.substring(0, 200);

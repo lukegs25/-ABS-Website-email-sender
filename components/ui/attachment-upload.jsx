@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-export const AttachmentUpload = ({ files, onChange, maxSizeMB = 10 }) => {
+export const AttachmentUpload = ({ files, onChange, maxSizeMB = 2 }) => {
   const [error, setError] = useState("");
 
   const handleFileSelect = (e) => {
@@ -27,8 +27,8 @@ export const AttachmentUpload = ({ files, onChange, maxSizeMB = 10 }) => {
     const totalSize = updatedFiles.reduce((sum, file) => sum + file.size, 0);
     const totalSizeMB = totalSize / (1024 * 1024);
     
-    if (totalSizeMB > 40) {
-      setError("Total attachment size cannot exceed 40MB");
+    if (totalSizeMB > 3) {
+      setError("Total attachment size cannot exceed 3MB (Vercel serverless limit)");
       return;
     }
     
@@ -116,7 +116,7 @@ export const AttachmentUpload = ({ files, onChange, maxSizeMB = 10 }) => {
           </label>
           
           <p className="text-xs text-gray-500 mt-2">
-            Max {maxSizeMB}MB per file, 40MB total
+            Max {maxSizeMB}MB per file, 3MB total
           </p>
         </div>
       </div>
