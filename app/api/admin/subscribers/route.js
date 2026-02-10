@@ -19,9 +19,37 @@ export async function GET() {
   }
 
   try {
-    // Get all subscribers with detailed information
-    // NOTE: Supabase has a default limit of 1000 rows. We use range(0, 9999) to fetch up to 10,000 subscribers.
-    // If you expect more than 10,000 subscribers, increase the range or implement pagination.
+    // Fetch accurate stats from the database using count queries (no row limit).
+    // This keeps subscriber list counts in sync with send-email audience counts.
+    const [
+      totalResult,
+      studentsResult,
+      teachersResult,
+      audiencesResult
+    ] = await Promise.all([
+      supabase.from('new_subscribers').select('*', { count: 'exact', head: true }),
+      supabase.from('new_subscribers').select('*', { count: 'exact', head: true }).eq('is_student', true),
+      supabase.from('new_subscribers').select('*', { count: 'exact', head: true }).eq('is_student', false),
+      supabase.from('audiences').select('id')
+    ]);
+
+    const total = totalResult.count ?? 0;
+    const students = studentsResult.count ?? 0;
+    const teachers = teachersResult.count ?? 0;
+    const audienceIds = (audiencesResult.data || []).map((r) => r.id);
+
+    const byAudience = {};
+    await Promise.all(
+      audienceIds.map(async (audienceId) => {
+        const { count } = await supabase
+          .from('new_subscribers')
+          .select('*', { count: 'exact', head: true })
+          .eq('audience_id', audienceId);
+        byAudience[audienceId] = count ?? 0;
+      })
+    );
+
+    // Get subscriber rows for the list (still limited for display)
     const { data: subscribers, error } = await supabase
       .from('new_subscribers')
       .select('*')
@@ -30,25 +58,18 @@ export async function GET() {
 
     if (error) throw error;
 
-    // Handle null or empty subscribers
     const subscriberList = subscribers || [];
 
-    // Calculate statistics
-    const stats = {
-      total: subscriberList.length,
-      students: subscriberList.filter(s => s.is_student).length,
-      teachers: subscriberList.filter(s => !s.is_student).length,
-      uniqueEmails: new Set(subscriberList.map(s => s.email)).size,
-      byAudience: {}
-    };
+    // uniqueEmails: distinct count from fetched list (exact DB-wide distinct would need a DB function)
+    const uniqueEmails = new Set(subscriberList.map((s) => s.email)).size;
 
-    // Count by audience
-    subscriberList.forEach(sub => {
-      if (!stats.byAudience[sub.audience_id]) {
-        stats.byAudience[sub.audience_id] = 0;
-      }
-      stats.byAudience[sub.audience_id]++;
-    });
+    const stats = {
+      total,
+      students,
+      teachers,
+      uniqueEmails,
+      byAudience
+    };
 
     return NextResponse.json({
       subscribers: subscriberList,
