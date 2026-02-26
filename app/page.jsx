@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import UpcomingEvents from "@/components/UpcomingEvents";
 
 export default function HomePage() {
   return (
@@ -31,6 +32,17 @@ export default function HomePage() {
           </Link>
         </div>
 
+        <div className="mt-8">
+          <a
+            href="https://docs.google.com/forms/d/e/1FAIpQLSdymr9eR36CrURhGz_JQy_C4sVv09Goj7c4EEBpDJagIB9AZQ/viewform"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block rounded-xl bg-[color:var(--byu-blue)] px-12 py-6 text-2xl sm:text-3xl font-extrabold uppercase tracking-wide text-white shadow-xl hover:opacity-90"
+          >
+            Fill out the survey
+          </a>
+        </div>
+
         <div className="mt-8 text-lg sm:text-xl">
           <a
             href="https://calendar.google.com/calendar/embed?src=c240123c3faa5646577759508b44ade28fc0856486fa89ce91a7e69824214aef%40group.calendar.google.com&ctz=America%2FDenver"
@@ -57,6 +69,8 @@ export default function HomePage() {
           <span className="block text-[clamp(2.5rem,9vw,10rem)]">AI IN BUSINESS</span>
           <span className="block text-[clamp(3.5rem,11vw,12rem)]">SOCIETY</span>
         </h2>
+
+        <UpcomingEvents />
       </section>
     </div>
   );

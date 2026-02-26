@@ -1,0 +1,43 @@
+# Supabase Database Backup
+# Runs daily and on manual trigger. Backups are stored as workflow artifacts (90-day retention).
+# Requires SUPABASE_DB_URL in GitHub repo secrets - see SUPABASE_BACKUP_GUIDE.md
+name: Supabase Database Backup
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 6 AM UTC daily
+  workflow_dispatch:       # Manual "Run workflow" in GitHub Actions
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/supabase-backup.yml'
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Create backup directory
+        run: mkdir -p supabase-backups
+
+      - name: Backup roles
+        run: supabase db dump --db-url "${{ secrets.SUPABASE_DB_URL }}" -f supabase-backups/roles.sql --role-only
+        continue-on-error: true
+
+      - name: Backup schema
+        run: supabase db dump --db-url "${{ secrets.SUPABASE_DB_URL }}" -f supabase-backups/schema.sql
+
+      - name: Backup data
+        run: supabase db dump --db-url "${{ secrets.SUPABASE_DB_URL }}" -f supabase-backups/data.sql --data-only --use-copy
+
+      - name: Upload backup artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ github.run_id }}
+          path: supabase-backups/
+          retention-days: 90

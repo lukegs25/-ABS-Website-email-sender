@@ -7,8 +7,9 @@
 		"start": "next start -p 3000",
 		"postinstall": "next telemetry disable || true"
 	},
-	"dependencies": {
-		"@clerk/nextjs": "^6.31.10",
+"dependencies": {
+    "googleapis": "^144.0.0",
+    "@clerk/nextjs": "^6.31.10",
 		"@hookform/resolvers": "^5.2.1",
 		"@radix-ui/react-slot": "^1.2.3",
 		"@supabase/ssr": "^0.7.0",
