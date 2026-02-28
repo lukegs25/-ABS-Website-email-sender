@@ -1,79 +1,61 @@
-import Image from "next/image";
 import Link from "next/link";
-import UpcomingEvents from "@/components/UpcomingEvents";
+import Image from "next/image";
+import CalendarSection from "@/components/CalendarSection";
+import JobBoard from "@/components/JobBoard";
 
 export default function HomePage() {
   return (
-    <div className="relative bg-white">
-      <div className="pointer-events-none absolute inset-0 z-0">
-        <div className="absolute right-[-6rem] md:right-[-8rem] xl:right-[-14rem] 2xl:right-[-18rem] top-0 h-[80vh] w-1/2 min-w-[560px] md:min-w-[640px] xl:min-w-[780px]">
-          <Image
-            src="/shaka_clear.png"
-            alt="Background shaka hand"
-            fill
-            priority
-            className="object-contain object-right opacity-90 scale-125 xl:scale-115 2xl:scale-110 origin-right"
-            sizes="66vw"
-          />
-        </div>
+    <div className="relative flex flex-col gap-8 p-8">
+      {/* Chrome dripping hand - top right */}
+      <div className="pointer-events-none absolute right-0 top-0 z-0 h-[70vh] w-1/2 min-w-[400px] md:min-w-[480px] xl:min-w-[560px]">
+        <Image
+          src="/shaka_clear.png"
+          alt="Chrome dripping hand"
+          fill
+          priority
+          className="object-contain object-right opacity-90 scale-110 xl:scale-100 origin-top-right"
+          sizes="50vw"
+        />
       </div>
-      <section className="relative z-10 py-28 pl-0 pr-8 sm:pl-0 sm:pr-12 lg:pl-0 lg:pr-24 xl:pr-40 2xl:pr-56 -ml-6 sm:-ml-6 lg:-ml-8 xl:-ml-10">
-        <h1 className="text-[clamp(3.5rem,10vw,14rem)] font-extrabold tracking-tight leading-[0.9] text-[color:var(--byu-blue)]">
-          JOIN THE
-        </h1>
-        {/* description removed per request */}
 
-        <div className="mt-12 flex flex-wrap gap-5">
-          <Link href="/student" className="rounded-md bg-[color:var(--byu-blue)] px-8 py-4 text-white text-lg font-semibold hover:opacity-90">
-            I am a Student
+      <section className="relative z-10 flex flex-col gap-6">
+        <h1 className="text-3xl font-extrabold tracking-tight text-[color:var(--byu-blue)]">
+          AI in Business Society
+        </h1>
+        <div className="flex flex-wrap gap-4">
+          <Link
+            href="/student"
+            className="inline-flex items-center justify-center rounded-xl bg-[color:var(--byu-blue)] px-8 py-3 font-bold uppercase tracking-wide text-white shadow-lg transition-opacity hover:opacity-90"
+          >
+            Student Join
           </Link>
-          <Link href="/teacher" className="rounded-md border border-[color:var(--byu-blue)] bg-white/70 px-8 py-4 text-[color:var(--byu-blue)] text-lg font-semibold backdrop-blur-[1px] transition-colors duration-200 hover:bg-[color:var(--byu-blue)]/10">
-            I am a Teacher
+          <Link
+            href="/teacher"
+            className="inline-flex items-center justify-center rounded-xl bg-[color:var(--byu-blue)] px-8 py-3 font-bold uppercase tracking-wide text-white shadow-lg transition-opacity hover:opacity-90"
+          >
+            Teacher Join
           </Link>
         </div>
-
-        <div className="mt-8">
-          <a
-            href="https://docs.google.com/forms/d/e/1FAIpQLSdymr9eR36CrURhGz_JQy_C4sVv09Goj7c4EEBpDJagIB9AZQ/viewform"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-block rounded-xl bg-[color:var(--byu-blue)] px-12 py-6 text-2xl sm:text-3xl font-extrabold uppercase tracking-wide text-white shadow-xl hover:opacity-90"
+        <div className="flex flex-col gap-2">
+          <Link
+            href="/student"
+            className="inline-flex w-fit items-center justify-center rounded-xl border-2 border-[color:var(--byu-blue)] bg-white px-14 py-5 text-xl font-bold text-[color:var(--byu-blue)] transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
           >
             Fill out the survey
-          </a>
+          </Link>
+          <p className="max-w-xl text-gray-600">
+            This survey will change the face of the Marriott School and contribute to changing our curriculum to be more AI job-in-field focused.
+          </p>
         </div>
-
-        <div className="mt-8 text-lg sm:text-xl">
-          <a
-            href="https://calendar.google.com/calendar/embed?src=c240123c3faa5646577759508b44ade28fc0856486fa89ce91a7e69824214aef%40group.calendar.google.com&ctz=America%2FDenver"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-block text-[color:var(--byu-blue)] underline bg-white/70 backdrop-blur-sm rounded px-2 py-1 shadow-sm"
-          >
-            Stay updated with our Google Calendar
-          </a>
-        </div>
-
-        <div className="mt-4 text-lg sm:text-xl">
-          <a
-            href="https://clubs.byu.edu/link/club/18295873491185562"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-block text-[color:var(--byu-blue)] underline bg-white/70 backdrop-blur-sm rounded px-2 py-1 shadow-sm"
-          >
-            BYU's AI in Business Society club page
-          </a>
-        </div>
-
-        <h2 aria-label="AI IN BUSINESS SOCIETY" className="mt-8 text-[color:var(--byu-blue)] font-extrabold tracking-tight leading-[0.9]">
-          <span className="block text-[clamp(2.5rem,9vw,10rem)]">AI IN BUSINESS</span>
-          <span className="block text-[clamp(3.5rem,11vw,12rem)]">SOCIETY</span>
-        </h2>
-
-        <UpcomingEvents />
       </section>
+
+      <div className="relative z-10">
+        <CalendarSection />
+      </div>
+
+      <div className="relative z-10">
+        <JobBoard />
+      </div>
     </div>
   );
 }
-
-

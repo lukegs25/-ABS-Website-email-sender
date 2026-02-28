@@ -37,17 +37,17 @@ export default function UpcomingEvents() {
 
   if (loading) {
     return (
-      <section className="relative z-10 mt-16 py-8 border-t border-gray-200">
-        <h2 className="text-2xl font-bold text-[color:var(--byu-blue)] mb-4">Upcoming Events</h2>
+      <div>
+        <h3 className="mb-3 text-lg font-semibold text-[color:var(--byu-blue)]">Upcoming Events</h3>
         <p className="text-gray-500">Loading…</p>
-      </section>
+      </div>
     );
   }
 
   if (events.length === 0) {
     return (
-      <section className="relative z-10 mt-16 py-8 border-t border-gray-200">
-        <h2 className="text-2xl font-bold text-[color:var(--byu-blue)] mb-4">Upcoming Events</h2>
+      <div>
+        <h3 className="mb-3 text-lg font-semibold text-[color:var(--byu-blue)]">Upcoming Events</h3>
         <p className="text-gray-600">No upcoming events this week.</p>
         <a
           href="https://calendar.google.com/calendar/embed?src=c240123c3faa5646577759508b44ade28fc0856486fa89ce91a7e69824214aef%40group.calendar.google.com&ctz=America%2FDenver"
@@ -57,13 +57,13 @@ export default function UpcomingEvents() {
         >
           View full Google Calendar →
         </a>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="relative z-10 mt-16 py-8 border-t border-gray-200">
-      <h2 className="text-2xl font-bold text-[color:var(--byu-blue)] mb-4">Upcoming Events</h2>
+    <div>
+      <h3 className="mb-3 text-lg font-semibold text-[color:var(--byu-blue)]">Upcoming Events</h3>
       <ul className="space-y-3">
         {events.map((e) => (
           <li
@@ -94,6 +94,6 @@ export default function UpcomingEvents() {
       >
         View full Google Calendar →
       </a>
-    </section>
+    </div>
   );
 }
