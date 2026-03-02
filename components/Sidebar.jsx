@@ -28,6 +28,9 @@ export default function Sidebar() {
         <Link href="/jobs" className="rounded-lg px-3 py-2 hover:bg-gray-100">
           Jobs
         </Link>
+        <Link href="/login" className="rounded-lg px-3 py-2 hover:bg-gray-100">
+          Member Login
+        </Link>
         <Link href="/admin" className="rounded-lg px-3 py-2 hover:bg-gray-100">
           Admin
         </Link>

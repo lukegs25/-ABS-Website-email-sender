@@ -1,11 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function JobBoard() {
-  const [jobs] = useState([]); // Placeholder - will be populated from scrapers/API
-  const [loading] = useState(false); // Placeholder for API loading state
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/jobs")
+      .then((res) => res.json())
+      .then((data) => setJobs(Array.isArray(data) ? data : []))
+      .catch(() => setJobs([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">

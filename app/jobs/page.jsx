@@ -1,5 +1,6 @@
 import Link from "next/link";
 import JobBoard from "@/components/JobBoard";
+import StarUsers from "@/components/StarUsers";
 
 export default function JobsPage() {
   return (
@@ -14,6 +15,8 @@ export default function JobsPage() {
         </p>
       </div>
       <JobBoard />
+
+      <StarUsers />
     </div>
   );
 }

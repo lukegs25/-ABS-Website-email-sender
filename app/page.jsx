@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import CalendarSection from "@/components/CalendarSection";
 import JobBoard from "@/components/JobBoard";
+import StarUsers from "@/components/StarUsers";
 
 export default function HomePage() {
   return (
@@ -38,7 +39,9 @@ export default function HomePage() {
         </div>
         <div className="flex flex-col gap-2">
           <Link
-            href="/student"
+            href="https://docs.google.com/forms/d/e/1FAIpQLSdymr9eR36CrURhGz_JQy_C4sVv09Goj7c4EEBpDJagIB9AZQ/viewform"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex w-fit items-center justify-center rounded-xl border-2 border-[color:var(--byu-blue)] bg-white px-14 py-5 text-xl font-bold text-[color:var(--byu-blue)] transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
           >
             Fill out the survey
@@ -55,6 +58,10 @@ export default function HomePage() {
 
       <div className="relative z-10">
         <JobBoard />
+      </div>
+
+      <div className="relative z-10">
+        <StarUsers />
       </div>
     </div>
   );
