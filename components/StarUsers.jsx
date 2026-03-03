@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import LinkedInSignIn from "@/components/LinkedInSignIn";
 
 export default function StarUsers() {
   const [starUsers, setStarUsers] = useState([]);
@@ -72,6 +73,21 @@ export default function StarUsers() {
           ))}
         </ul>
       )}
+
+      <div className="mt-8 pt-8 border-t border-gray-200">
+        <h3 className="text-lg font-bold text-[color:var(--byu-blue)]">Member Login</h3>
+        <p className="mt-2 text-gray-600">
+          Sign in with your LinkedIn account to build your member profile and access the dashboard.
+        </p>
+        <div className="mt-4">
+          <LinkedInSignIn redirectTo="/member" />
+        </div>
+        <p className="mt-4 text-sm text-gray-500">
+          <Link href="/" className="text-[color:var(--byu-blue)] underline">
+            ← Back to home
+          </Link>
+        </p>
+      </div>
     </section>
   );
 }
