@@ -7,65 +7,56 @@ export async function GET() {
     return NextResponse.json([]);
   }
 
-  const { data: stars, error } = await supabase
-    .from("member_stars")
-    .select(`
-      id,
-      member_id,
-      skill,
-      note,
-      created_at,
-      profiles (
-        id,
-        full_name,
-        email,
-        avatar_url,
-        headline,
-        linkedin_url
-      )
-    `)
-    .order("created_at", { ascending: false });
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, avatar_url, headline, linkedin_url");
 
-  if (error) {
-    console.error("[GET /api/star-users]", error);
+  if (profilesError) {
+    console.error("[GET /api/star-users] profiles error:", profilesError);
     return NextResponse.json([]);
   }
 
-  // Dedupe by member_id, keeping their latest star; merge skills/notes
-  const byMember = new Map();
-  for (const s of stars || []) {
-    const pid = s.member_id;
-    const profile = s.profiles;
-    if (!profile) continue;
+  const { data: stars, error: starsError } = await supabase
+    .from("member_stars")
+    .select("id, member_id, skill, event_name, note, created_at")
+    .order("created_at", { ascending: false });
 
-    const existing = byMember.get(pid);
-    const skills = existing
-      ? [...new Set([...(existing.skills || []), s.skill].filter(Boolean))]
-      : s.skill ? [s.skill] : [];
-    const notes = existing?.notes
-      ? [...existing.notes, s.note].filter(Boolean)
-      : s.note ? [s.note] : [];
-
-    byMember.set(pid, {
-      id: pid,
-      display_name: profile.full_name || profile.email?.split("@")[0] || "Member",
-      avatar_url: profile.avatar_url,
-      email: profile.email,
-      headline: profile.headline,
-      linkedin_url: profile.linkedin_url,
-      skills,
-      notes,
-      latest_star_at: s.created_at,
-    });
+  if (starsError) {
+    console.error("[GET /api/star-users] stars error:", starsError);
   }
 
-  const list = Array.from(byMember.values())
-    .sort((a, b) => new Date(b.latest_star_at) - new Date(a.latest_star_at))
-    .map(({ skills, notes, latest_star_at, ...rest }) => ({
-      ...rest,
-      skill: skills?.join(", ") || null,
-      note: notes?.[0] || null,
-    }));
+  const starsByMember = new Map();
+  for (const s of stars || []) {
+    if (!starsByMember.has(s.member_id)) {
+      starsByMember.set(s.member_id, []);
+    }
+    starsByMember.get(s.member_id).push(s);
+  }
+
+  const list = (profiles || [])
+    .filter((p) => p.full_name)
+    .map((profile) => {
+      const memberStars = starsByMember.get(profile.id) || [];
+      const skills = [...new Set(memberStars.map((s) => s.skill).filter(Boolean))];
+      const events = [...new Set(memberStars.map((s) => s.event_name).filter(Boolean))];
+
+      return {
+        id: profile.id,
+        display_name: profile.full_name || profile.email?.split("@")[0] || "Member",
+        avatar_url: profile.avatar_url,
+        email: profile.email,
+        headline: profile.headline,
+        linkedin_url: profile.linkedin_url,
+        star_count: memberStars.length,
+        skill: skills.join(", ") || null,
+        recent_events: events.slice(0, 3),
+      };
+    })
+    .sort((a, b) => b.star_count - a.star_count || a.display_name.localeCompare(b.display_name));
+
+  list.forEach((item, i) => {
+    item.rank = i + 1;
+  });
 
   return NextResponse.json(list);
 }

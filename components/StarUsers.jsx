@@ -16,10 +16,17 @@ export default function StarUsers() {
       .finally(() => setLoading(false));
   }, []);
 
+  const rankBadge = (rank) => {
+    if (rank === 1) return "🥇";
+    if (rank === 2) return "🥈";
+    if (rank === 3) return "🥉";
+    return `#${rank}`;
+  };
+
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <h2 className="mb-4 text-xl font-bold text-[color:var(--byu-blue)]">
-        Star users
+        Star Users Leaderboard
       </h2>
 
       {loading ? (
@@ -35,14 +42,16 @@ export default function StarUsers() {
           </p>
         </div>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="divide-y divide-gray-100">
           {starUsers.map((user) => (
-            <li key={user.id}>
+            <li key={user.id} className="py-4 first:pt-0 last:pb-0">
               <Link
                 href={`/stars/${user.id}`}
-                className="flex flex-col gap-2 rounded-lg border border-gray-100 p-4 hover:bg-gray-50 block transition-colors"
+                className="flex items-center gap-4 rounded-lg p-2 transition-colors hover:bg-gray-50"
               >
-              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center text-xl font-bold">
+                  {rankBadge(user.rank)}
+                </span>
                 {user.avatar_url ? (
                   <img
                     src={user.avatar_url}
@@ -54,20 +63,20 @@ export default function StarUsers() {
                     {user.display_name?.[0] || "?"}
                   </div>
                 )}
-                <div>
-                  <span className="font-semibold text-gray-900">
+                <div className="flex-1 min-w-0">
+                  <span className="block font-semibold text-gray-900 truncate">
                     {user.display_name || "Member"}
                   </span>
                   {user.skill && (
-                    <span className="mt-0.5 block text-sm text-gray-500">
+                    <span className="block text-sm text-gray-500 truncate">
                       {user.skill}
                     </span>
                   )}
                 </div>
-              </div>
-              {user.note && (
-                <p className="text-sm text-gray-600">{user.note}</p>
-              )}
+                <div className="flex items-center gap-1 text-[color:var(--byu-blue)]">
+                  <span className="text-yellow-500 text-lg">&#9733;</span>
+                  <span className="font-bold">{user.star_count}</span>
+                </div>
               </Link>
             </li>
           ))}
@@ -82,11 +91,6 @@ export default function StarUsers() {
         <div className="mt-4">
           <LinkedInSignIn redirectTo="/member" />
         </div>
-        <p className="mt-4 text-sm text-gray-500">
-          <Link href="/" className="text-[color:var(--byu-blue)] underline">
-            ← Back to home
-          </Link>
-        </p>
       </div>
     </section>
   );

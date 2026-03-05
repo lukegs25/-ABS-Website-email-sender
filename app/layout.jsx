@@ -11,7 +11,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="min-h-screen">
         <Sidebar />
-        <main className="ml-52 min-h-screen bg-gray-50/50">
+        <main className="min-h-screen bg-gray-50/50 pt-14 md:ml-52 md:pt-0">
           {children}
         </main>
       </body>

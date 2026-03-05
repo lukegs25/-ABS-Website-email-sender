@@ -7,6 +7,7 @@ import SubscriberManager from "@/components/SubscriberManager";
 import EmailTemplates from "@/components/EmailTemplates";
 import AudienceManager from "@/components/AudienceManager";
 import EventManager from "@/components/EventManager";
+import StarManager from "@/components/StarManager";
 
 function AdminDashboard() {
   const adminSession = useAdmin();
@@ -39,6 +40,7 @@ function AdminDashboard() {
     { id: "test", label: "Test Email" },
     { id: "events", label: "Events" },
     { id: "subscribers", label: "Subscribers" },
+    { id: "stars", label: "Stars" },
     { id: "audiences", label: "Audiences", superAdminOnly: true }
   ];
 
@@ -127,6 +129,12 @@ function AdminDashboard() {
                 </div>
               )}
               
+              {activeTab === "stars" && (
+                <div className="p-6">
+                  <StarManager />
+                </div>
+              )}
+
               {activeTab === "subscribers" && (
                 <div className="p-6">
                   <SubscriberManager />

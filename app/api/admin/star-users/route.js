@@ -2,6 +2,30 @@ import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { getAdminSession } from "@/lib/auth-helpers";
 
+export async function GET() {
+  const session = await getAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const supabase = getSupabaseServerClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Database not configured" }, { status: 503 });
+  }
+
+  const { data: profiles, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, avatar_url")
+    .order("full_name");
+
+  if (error) {
+    console.error("[GET /api/admin/star-users]", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ members: profiles || [] });
+}
+
 export async function POST(req) {
   const session = await getAdminSession();
   if (!session) {
@@ -18,6 +42,7 @@ export async function POST(req) {
     const member_id = body?.member_id?.trim();
     const skill = body?.skill?.trim() || null;
     const note = body?.note?.trim() || null;
+    const event_name = body?.event_name?.trim() || null;
 
     if (!member_id) {
       return NextResponse.json(
@@ -28,8 +53,8 @@ export async function POST(req) {
 
     const { data, error } = await supabase
       .from("member_stars")
-      .insert({ member_id, skill, note })
-      .select("id, member_id, skill, note, created_at")
+      .insert({ member_id, skill, note, event_name })
+      .select("id, member_id, skill, note, event_name, created_at")
       .single();
 
     if (error) {

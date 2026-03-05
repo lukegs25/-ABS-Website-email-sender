@@ -18,9 +18,6 @@ function AuthErrorContent() {
       >
         Try again
       </Link>
-      <Link href="/" className="text-sm text-gray-500 underline">
-        ← Back to home
-      </Link>
     </div>
   );
 }

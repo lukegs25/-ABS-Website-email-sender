@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import MemberProfile from "@/components/MemberProfile";
 
@@ -9,9 +8,6 @@ export default async function MemberPage() {
     return (
       <div className="p-8">
         <p className="text-red-600">Auth not configured.</p>
-        <Link href="/" className="mt-4 inline-block text-[color:var(--byu-blue)] underline">
-          Back to home
-        </Link>
       </div>
     );
   }
@@ -27,6 +23,12 @@ export default async function MemberPage() {
     .select("*")
     .eq("id", user.id)
     .single();
+
+  const { data: stars } = await supabase
+    .from("member_stars")
+    .select("id, skill, event_name, note, created_at")
+    .eq("member_id", user.id)
+    .order("created_at", { ascending: false });
 
   return (
     <div className="flex flex-col gap-8 p-8">
@@ -44,13 +46,7 @@ export default async function MemberPage() {
         </form>
       </div>
 
-      <MemberProfile user={user} profile={profile} />
-
-      <p className="text-sm text-gray-500">
-        <Link href="/" className="text-[color:var(--byu-blue)] underline">
-          ← Back to home
-        </Link>
-      </p>
+      <MemberProfile user={user} profile={profile} stars={stars || []} />
     </div>
   );
 }
