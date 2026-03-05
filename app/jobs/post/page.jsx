@@ -1,3 +1,5 @@
+import PostJobForm from "@/components/forms/PostJobForm";
+
 export default function PostJobPage() {
   return (
     <div className="flex flex-col gap-8 p-8">
@@ -6,10 +8,10 @@ export default function PostJobPage() {
           Post a Job
         </h1>
         <p className="mt-2 text-gray-600">
-          Job posting form coming soon. Companies will be able to submit jobs
-          here for approval and inclusion on the board.
+          Submit a job posting for approval and inclusion on the board.
         </p>
       </div>
+      <PostJobForm />
     </div>
   );
 }

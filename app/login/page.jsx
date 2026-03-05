@@ -1,4 +1,3 @@
-import Link from "next/link";
 import LinkedInSignIn from "@/components/LinkedInSignIn";
 
 export default function LoginPage() {
@@ -17,12 +16,6 @@ export default function LoginPage() {
       <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
         <LinkedInSignIn redirectTo="/member" />
       </div>
-
-      <p className="text-sm text-gray-500">
-        <Link href="/" className="text-[color:var(--byu-blue)] underline">
-          ← Back to home
-        </Link>
-      </p>
     </div>
   );
 }
