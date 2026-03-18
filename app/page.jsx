@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Instagram, Linkedin, Globe } from "lucide-react";
 import CalendarSection from "@/components/CalendarSection";
 import JobBoard from "@/components/JobBoard";
 import StarUsers from "@/components/StarUsers";
@@ -49,6 +50,35 @@ export default function HomePage() {
           <p className="max-w-xl text-gray-600">
             This survey will change the face of the Marriott School and contribute to changing our curriculum to be more AI job-in-field focused.
           </p>
+          <div className="flex flex-wrap gap-3 pt-2">
+            <a
+              href="https://www.instagram.com/abs.byu/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
+            >
+              <Instagram size={16} />
+              Instagram
+            </a>
+            <a
+              href="https://www.linkedin.com/company/ai-in-business-society/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
+            >
+              <Linkedin size={16} />
+              LinkedIn
+            </a>
+            <a
+              href="https://clubs.byu.edu/link/club/18295873491185562"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
+            >
+              <Globe size={16} />
+              Join the Club
+            </a>
+          </div>
         </div>
       </section>
 
