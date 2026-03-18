@@ -6,9 +6,14 @@ const GOOGLE_CALENDAR_EMBED_URL =
 export default function CalendarSection() {
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-4 text-xl font-bold text-[color:var(--byu-blue)]">
-        Calendar
-      </h2>
+      <div className="mb-4">
+        <h2 className="text-xl font-bold text-[color:var(--byu-blue)]">
+          Calendar
+        </h2>
+        <p className="mt-0.5 text-sm text-gray-500">
+          Upcoming meetings, workshops, and events
+        </p>
+      </div>
 
       <div className="space-y-4">
         <UpcomingEvents />
@@ -17,6 +22,7 @@ export default function CalendarSection() {
           <iframe
             src={GOOGLE_CALENDAR_EMBED_URL}
             title="AI in Business Society Google Calendar"
+            loading="lazy"
             className="h-full w-full"
             style={{ border: 0 }}
           />
