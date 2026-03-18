@@ -13,7 +13,7 @@ export default function CalendarSection() {
       <div className="space-y-4">
         <UpcomingEvents />
 
-        <div className="h-[500px] w-full overflow-hidden rounded-lg border border-gray-200">
+        <div className="h-[280px] w-full overflow-hidden rounded-lg border border-gray-200 sm:h-[400px] md:h-[500px]">
           <iframe
             src={GOOGLE_CALENDAR_EMBED_URL}
             title="AI in Business Society Google Calendar"

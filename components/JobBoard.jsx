@@ -17,23 +17,23 @@ export default function JobBoard() {
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <h2 className="text-xl font-bold text-[color:var(--byu-blue)]">
           Job Board
         </h2>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="hidden text-sm text-gray-500 sm:inline">
             Students: log in to save jobs
           </span>
           <Link
             href="/jobs/post"
-            className="rounded-md border border-[color:var(--byu-blue)] bg-white px-4 py-2 text-sm font-medium text-[color:var(--byu-blue)] hover:bg-[color:var(--byu-blue)]/10"
+            className="rounded-md border border-[color:var(--byu-blue)] bg-white px-3 py-2 text-sm font-medium text-[color:var(--byu-blue)] hover:bg-[color:var(--byu-blue)]/10"
           >
             Post a Job
           </Link>
           <Link
             href="/jobs"
-            className="rounded-md bg-[color:var(--byu-blue)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            className="rounded-md bg-[color:var(--byu-blue)] px-3 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             View All Jobs
           </Link>

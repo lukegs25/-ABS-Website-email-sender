@@ -7,9 +7,9 @@ import StarUsers from "@/components/StarUsers";
 
 export default function HomePage() {
   return (
-    <div className="relative flex flex-col gap-8 p-8">
+    <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-8 p-4 sm:p-6 md:p-8">
       {/* Chrome dripping hand - top right */}
-      <div className="pointer-events-none absolute right-0 top-0 z-0 h-[70vh] w-1/2 min-w-[400px] md:min-w-[480px] xl:min-w-[560px]">
+      <div className="pointer-events-none absolute right-0 top-0 z-0 h-[70vh] w-1/2 min-w-[180px] sm:min-w-[280px] md:min-w-[400px] xl:min-w-[480px]">
         <Image
           src="/shaka_clear.png"
           alt="Chrome dripping hand"
