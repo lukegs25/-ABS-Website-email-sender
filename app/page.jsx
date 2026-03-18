@@ -1,9 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Instagram, Linkedin, Globe } from "lucide-react";
+import { motion } from "motion/react";
 import CalendarSection from "@/components/CalendarSection";
 import JobBoard from "@/components/JobBoard";
 import StarUsers from "@/components/StarUsers";
+import LinkedInSignIn from "@/components/LinkedInSignIn";
 
 export default function HomePage() {
   return (
@@ -15,16 +19,29 @@ export default function HomePage() {
           alt="Chrome dripping hand"
           fill
           priority
-          className="object-contain object-right opacity-90 scale-110 xl:scale-100 origin-top-right"
+          className="object-contain object-right opacity-75 scale-110 xl:scale-100 origin-top-right"
           sizes="50vw"
         />
       </div>
 
-      <section className="relative z-10 flex flex-col gap-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-[color:var(--byu-blue)]">
-          AI in Business Society
-        </h1>
-        <div className="flex flex-wrap gap-4">
+      {/* Hero */}
+      <motion.section
+        className="relative z-10 flex flex-col gap-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
+        <div className="flex flex-col gap-3">
+          <h1 className="text-4xl font-extrabold tracking-tight text-[color:var(--byu-blue)] sm:text-5xl md:text-6xl">
+            AI in Business<br className="hidden sm:block" /> Society
+          </h1>
+          <p className="max-w-md text-base text-gray-600 sm:text-lg">
+            BYU&apos;s club connecting students and faculty with the tools,
+            skills, and community to lead in an AI-driven world.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
           <Link
             href="/student"
             className="inline-flex items-center justify-center rounded-xl bg-[color:var(--byu-blue)] px-8 py-3 font-bold uppercase tracking-wide text-white shadow-lg transition-opacity hover:opacity-90"
@@ -33,55 +50,88 @@ export default function HomePage() {
           </Link>
           <Link
             href="/teacher"
-            className="inline-flex items-center justify-center rounded-xl bg-[color:var(--byu-blue)] px-8 py-3 font-bold uppercase tracking-wide text-white shadow-lg transition-opacity hover:opacity-90"
+            className="inline-flex items-center justify-center rounded-xl border-2 border-[color:var(--byu-blue)] bg-white px-8 py-3 font-bold uppercase tracking-wide text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
           >
-            Teacher Join
+            Faculty Join
           </Link>
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap gap-3">
-            <a
-              href="https://www.instagram.com/abs.byu/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
-            >
-              <Instagram size={16} />
-              Instagram
-            </a>
-            <a
-              href="https://www.linkedin.com/company/ai-in-business-society/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
-            >
-              <Linkedin size={16} />
-              LinkedIn
-            </a>
-            <a
-              href="https://clubs.byu.edu/link/club/18295873491185562"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
-            >
-              <Globe size={16} />
-              Join the Club
-            </a>
-          </div>
+
+        <div className="flex flex-wrap gap-3">
+          <a
+            href="https://www.instagram.com/abs.byu/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
+          >
+            <Instagram size={16} />
+            Instagram
+          </a>
+          <a
+            href="https://www.linkedin.com/company/ai-in-business-society/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
+          >
+            <Linkedin size={16} />
+            LinkedIn
+          </a>
+          <a
+            href="https://clubs.byu.edu/link/club/18295873491185562"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
+          >
+            <Globe size={16} />
+            Join the Club
+          </a>
         </div>
-      </section>
+      </motion.section>
 
-      <div className="relative z-10">
+      <motion.div
+        className="relative z-10"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+      >
         <CalendarSection />
-      </div>
+      </motion.div>
 
-      <div className="relative z-10">
+      <motion.div
+        className="relative z-10"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
+      >
         <JobBoard />
-      </div>
+      </motion.div>
 
-      <div className="relative z-10">
+      <motion.div
+        className="relative z-10"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
+      >
         <StarUsers />
-      </div>
+      </motion.div>
+
+      {/* Member login — standalone card */}
+      <motion.section
+        className="relative z-10 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 0.4 }}
+      >
+        <h2 className="text-xl font-bold text-[color:var(--byu-blue)]">
+          Member Login
+        </h2>
+        <p className="mt-2 text-gray-600">
+          Sign in with your LinkedIn account to build your member profile,
+          save jobs, and access the member dashboard.
+        </p>
+        <div className="mt-4">
+          <LinkedInSignIn redirectTo="/member" />
+        </div>
+      </motion.section>
     </div>
   );
 }

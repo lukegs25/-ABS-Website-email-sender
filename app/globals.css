@@ -2,11 +2,18 @@
 
 :root {
   --byu-blue: #002e5d;
+  --font-geist-sans: "Geist Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-geist-mono: "Geist Mono", ui-monospace, monospace;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   background: #ffffff;
 }
 
-
+body {
+  font-family: var(--font-geist-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

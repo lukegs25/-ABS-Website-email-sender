@@ -4,14 +4,22 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  Home,
+  GraduationCap,
+  Users,
+  Briefcase,
+  LogIn,
+  Settings,
+} from "lucide-react";
 
 const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/student", label: "Student" },
-  { href: "/teacher", label: "Teacher" },
-  { href: "/jobs", label: "Jobs" },
-  { href: "/login", label: "Member Login" },
-  { href: "/admin", label: "Admin" },
+  { href: "/", label: "Home", icon: Home },
+  { href: "/student", label: "Student", icon: GraduationCap },
+  { href: "/teacher", label: "Faculty", icon: Users },
+  { href: "/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/login", label: "Member Login", icon: LogIn },
+  { href: "/admin", label: "Admin", icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -28,7 +36,9 @@ export default function Sidebar() {
     } else {
       document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [open]);
 
   return (
@@ -50,12 +60,28 @@ export default function Sidebar() {
           className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100"
         >
           {open ? (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
               <line x1="3" y1="6" x2="21" y2="6" />
               <line x1="3" y1="12" x2="21" y2="12" />
               <line x1="3" y1="18" x2="21" y2="18" />
@@ -74,24 +100,33 @@ export default function Sidebar() {
 
       {/* Mobile slide-out nav */}
       <nav
-        className={`fixed left-0 top-14 z-50 flex h-[calc(100vh-3.5rem)] w-64 flex-col bg-white shadow-xl transition-transform duration-200 md:hidden ${
+        className={`fixed left-0 top-14 z-50 flex h-[calc(100vh-3.5rem)] w-64 flex-col bg-white shadow-xl transition-transform duration-200 ease-out md:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex flex-1 flex-col gap-1 p-4 text-sm">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`rounded-lg px-3 py-3 text-base ${
-                pathname === link.href
-                  ? "bg-gray-100 font-semibold text-[color:var(--byu-blue)]"
-                  : "hover:bg-gray-100"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <div className="flex flex-1 flex-col gap-1 p-4">
+          {navLinks.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-3 rounded-lg px-3 py-3 text-base font-medium transition-colors ${
+                  active
+                    ? "bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]"
+                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Icon
+                  size={18}
+                  className={
+                    active ? "text-[color:var(--byu-blue)]" : "text-gray-400"
+                  }
+                />
+                {label}
+              </Link>
+            );
+          })}
         </div>
       </nav>
 
@@ -106,20 +141,29 @@ export default function Sidebar() {
             className="h-12 w-auto object-contain"
           />
         </Link>
-        <nav className="flex flex-1 flex-col gap-1 p-4 text-sm">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`rounded-lg px-3 py-2 ${
-                pathname === link.href
-                  ? "bg-gray-100 font-semibold text-[color:var(--byu-blue)]"
-                  : "hover:bg-gray-100"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="flex flex-1 flex-col gap-1 p-3 text-sm">
+          {navLinks.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium transition-colors ${
+                  active
+                    ? "bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                }`}
+              >
+                <Icon
+                  size={16}
+                  className={
+                    active ? "text-[color:var(--byu-blue)]" : "text-gray-400"
+                  }
+                />
+                {label}
+              </Link>
+            );
+          })}
         </nav>
       </aside>
     </>
