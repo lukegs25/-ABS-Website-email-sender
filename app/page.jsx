@@ -39,18 +39,7 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="flex flex-col gap-2">
-          <Link
-            href="https://docs.google.com/forms/d/e/1FAIpQLSdymr9eR36CrURhGz_JQy_C4sVv09Goj7c4EEBpDJagIB9AZQ/viewform"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-fit items-center justify-center rounded-xl border-2 border-[color:var(--byu-blue)] bg-white px-14 py-5 text-xl font-bold text-[color:var(--byu-blue)] transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
-          >
-            Fill out the survey
-          </Link>
-          <p className="max-w-xl text-gray-600">
-            This survey will change the face of the Marriott School and contribute to changing our curriculum to be more AI job-in-field focused.
-          </p>
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="flex flex-wrap gap-3">
             <a
               href="https://www.instagram.com/abs.byu/"
               target="_blank"
