@@ -282,7 +282,7 @@ export default function MarketingAgentTab() {
   }
 
   async function handleScheduleStory() {
-    if (!campaignId || !selectedEvent) return;
+    if (!selectedEvent) return;
     setScheduling(true);
     setPostError(null);
     const scheduledFor = eventDateISO(selectedEvent);
@@ -530,7 +530,7 @@ export default function MarketingAgentTab() {
               {/* Schedule 8 AM story */}
               <button
                 onClick={handleScheduleStory}
-                disabled={scheduling || scheduled || !campaignId}
+                disabled={scheduling || scheduled || !selectedEvent}
                 className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                   scheduled
                     ? "bg-green-100 text-green-700"

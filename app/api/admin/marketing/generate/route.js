@@ -101,31 +101,35 @@ ${speakerName ? `- SPEAKER SECTION: circular headshot placeholder, "${speakerNam
       prompt: `Generate social media captions and a BYU club announcement email:\n\n${captionContext}`,
     });
 
-    // ── 3. Persist in Supabase ───────────────────────────────────────────────
+    // ── 3. Persist in Supabase (optional — skipped if tables not set up) ────────
     const supabase = getSupabaseServerClient();
     let campaignId = null;
 
     if (supabase) {
-      const { data, error } = await supabase
-        .from('marketing_campaigns')
-        .insert({
-          event_id: eventData.id || null,
-          event_name: eventName,
-          event_date: eventData.start?.dateTime || eventData.start?.date || null,
-          speaker_name: speakerName || null,
-          speaker_title: speakerTitle || null,
-          speaker_linkedin: speakerInfo?.linkedinUrl || null,
-          flyer_url: null, // updated after client uploads to UploadThing
-          instagram_caption: captions?.instagramCaption || null,
-          linkedin_caption: captions?.linkedinCaption || null,
-          byu_template: captions?.byuTemplate || null,
-          color_palette: palette,
-          status: 'draft',
-        })
-        .select('id')
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('marketing_campaigns')
+          .insert({
+            event_id: eventData.id || null,
+            event_name: eventName,
+            event_date: eventData.start?.dateTime || eventData.start?.date || null,
+            speaker_name: speakerName || null,
+            speaker_title: speakerTitle || null,
+            speaker_linkedin: speakerInfo?.linkedinUrl || null,
+            flyer_url: null,
+            instagram_caption: captions?.instagramCaption || null,
+            linkedin_caption: captions?.linkedinCaption || null,
+            byu_template: captions?.byuTemplate || null,
+            color_palette: palette,
+            status: 'draft',
+          })
+          .select('id')
+          .single();
 
-      if (!error && data) campaignId = data.id;
+        if (!error && data) campaignId = data.id;
+      } catch {
+        // Tables not set up yet — generation continues without persisting
+      }
     }
 
     return Response.json({
