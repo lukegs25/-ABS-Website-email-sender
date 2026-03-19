@@ -43,6 +43,9 @@ export async function POST(req) {
     const skill = body?.skill?.trim() || null;
     const note = body?.note?.trim() || null;
     const event_name = body?.event_name?.trim() || null;
+    const source = body?.source || "manual";
+    const event_id = body?.event_id?.trim() || null;
+    const star_count = parseInt(body?.star_count ?? 1, 10);
 
     if (!member_id) {
       return NextResponse.json(
@@ -51,10 +54,17 @@ export async function POST(req) {
       );
     }
 
+    if (isNaN(star_count) || star_count < 1) {
+      return NextResponse.json(
+        { error: "star_count must be a positive integer" },
+        { status: 400 }
+      );
+    }
+
     const { data, error } = await supabase
       .from("member_stars")
-      .insert({ member_id, skill, note, event_name })
-      .select("id, member_id, skill, note, event_name, created_at")
+      .insert({ member_id, skill, note, event_name, source, event_id, star_count })
+      .select("id, member_id, skill, note, event_name, source, event_id, star_count, created_at")
       .single();
 
     if (error) {

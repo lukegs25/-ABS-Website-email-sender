@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { getSupabaseServerClient } from "@/lib/supabase";
 import MemberProfile from "@/components/MemberProfile";
 
 export default async function MemberPage() {
@@ -26,9 +27,23 @@ export default async function MemberPage() {
 
   const { data: stars } = await supabase
     .from("member_stars")
-    .select("id, skill, event_name, note, created_at")
+    .select("id, skill, event_name, note, star_count, source, event_id, created_at")
     .eq("member_id", user.id)
     .order("created_at", { ascending: false });
+
+  // Fetch star tiers to resolve member's current tier
+  const serviceSupabase = getSupabaseServerClient();
+  let tiers = [];
+  if (serviceSupabase) {
+    const { data: tiersData } = await serviceSupabase
+      .from("star_tiers")
+      .select("tier_name, min_stars, badge_emoji")
+      .order("min_stars", { ascending: false });
+    tiers = tiersData || [];
+  }
+
+  const totalStars = (stars || []).reduce((sum, s) => sum + (s.star_count ?? 1), 0);
+  const currentTier = tiers.find((t) => totalStars >= t.min_stars) || null;
 
   return (
     <div className="flex flex-col gap-8 p-8">
@@ -46,7 +61,13 @@ export default async function MemberPage() {
         </form>
       </div>
 
-      <MemberProfile user={user} profile={profile} stars={stars || []} />
+      <MemberProfile
+        user={user}
+        profile={profile}
+        stars={stars || []}
+        totalStars={totalStars}
+        currentTier={currentTier}
+      />
     </div>
   );
 }

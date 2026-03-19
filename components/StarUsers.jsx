@@ -43,25 +43,44 @@ function RankBadge({ rank }) {
 
 export default function StarUsers() {
   const [starUsers, setStarUsers] = useState([]);
+  const [tiers, setTiers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/star-users")
-      .then((res) => res.json())
-      .then((data) => setStarUsers(Array.isArray(data) ? data : []))
-      .catch(() => setStarUsers([]))
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch("/api/star-users").then((r) => r.json()).catch(() => []),
+      fetch("/api/stars/leaderboard?limit=10").then((r) => r.json()).catch(() => ({ data: [] })),
+    ]).then(([usersData, leaderboardData]) => {
+      // Prefer leaderboard data (has tier info) if available
+      const lbUsers = leaderboardData?.data || [];
+      if (lbUsers.length > 0) {
+        setStarUsers(lbUsers.map((u) => ({
+          ...u,
+          star_count: u.total_stars,
+        })));
+      } else {
+        setStarUsers(Array.isArray(usersData) ? usersData : []);
+      }
+    }).finally(() => setLoading(false));
   }, []);
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="mb-4">
-        <h2 className="text-xl font-bold text-[color:var(--byu-blue)]">
-          Star Members
-        </h2>
-        <p className="mt-0.5 text-sm text-gray-500">
-          Recognized for AI tool proficiency and contributions to the club
-        </p>
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-[color:var(--byu-blue)]">
+            Star Members
+          </h2>
+          <p className="mt-0.5 text-sm text-gray-500">
+            Recognized for AI tool proficiency and contributions to the club
+          </p>
+        </div>
+        <Link
+          href="/leaderboard"
+          className="shrink-0 text-sm font-medium text-[color:var(--byu-blue)] hover:underline"
+        >
+          Full Leaderboard →
+        </Link>
       </div>
 
       {loading ? (
@@ -80,7 +99,7 @@ export default function StarUsers() {
         </div>
       ) : (
         <ul className="divide-y divide-gray-100">
-          {starUsers.map((user) => {
+          {starUsers.slice(0, 10).map((user) => {
             const topStyle = user.rank <= 3 ? TOP3_STYLES[user.rank - 1] : "";
             return (
               <li key={user.id} className="py-3 first:pt-0 last:pb-0">
@@ -103,9 +122,16 @@ export default function StarUsers() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <span className="block font-semibold text-gray-900 truncate">
-                      {user.display_name || "Member"}
-                    </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-gray-900 truncate">
+                        {user.display_name || "Member"}
+                      </span>
+                      {user.tier_emoji && user.tier_name && (
+                        <span className="inline-flex items-center gap-0.5 rounded-full bg-[color:var(--byu-blue)]/10 px-2 py-0.5 text-xs font-medium text-[color:var(--byu-blue)]">
+                          {user.tier_emoji} {user.tier_name}
+                        </span>
+                      )}
+                    </div>
                     {user.skill && (
                       <span className="block text-sm text-gray-500 truncate">
                         {user.skill}
