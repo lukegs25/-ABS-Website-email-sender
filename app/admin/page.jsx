@@ -9,6 +9,9 @@ import AudienceManager from "@/components/AudienceManager";
 import EventManager from "@/components/EventManager";
 import StarManager from "@/components/StarManager";
 import MarketingAgentTab from "@/components/MarketingAgentTab";
+import AttendanceManager from "@/components/AttendanceManager";
+import StarTierManager from "@/components/StarTierManager";
+import SiteContentEditor from "@/components/SiteContentEditor";
 
 function AdminDashboard() {
   const adminSession = useAdmin();
@@ -40,9 +43,12 @@ function AdminDashboard() {
     { id: "compose", label: "Compose Email" },
     { id: "test", label: "Test Email" },
     { id: "events", label: "Events" },
+    { id: "attendance", label: "Attendance" },
     { id: "subscribers", label: "Subscribers" },
     { id: "stars", label: "Stars" },
+    { id: "star-tiers", label: "Star Tiers" },
     { id: "marketing", label: "Marketing Agent" },
+    { id: "site-editor", label: "Site Editor" },
     { id: "audiences", label: "Audiences", superAdminOnly: true }
   ];
 
@@ -152,6 +158,24 @@ function AdminDashboard() {
               {activeTab === "marketing" && (
                 <div className="p-6">
                   <MarketingAgentTab />
+                </div>
+              )}
+
+              {activeTab === "attendance" && (
+                <div className="p-6">
+                  <AttendanceManager />
+                </div>
+              )}
+
+              {activeTab === "star-tiers" && (
+                <div className="p-6">
+                  <StarTierManager />
+                </div>
+              )}
+
+              {activeTab === "site-editor" && (
+                <div className="p-6">
+                  <SiteContentEditor />
                 </div>
               )}
             </div>

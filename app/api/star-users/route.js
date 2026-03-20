@@ -18,7 +18,7 @@ export async function GET() {
 
   const { data: stars, error: starsError } = await supabase
     .from("member_stars")
-    .select("id, member_id, skill, event_name, note, created_at")
+    .select("id, member_id, skill, event_name, note, star_count, created_at")
     .order("created_at", { ascending: false });
 
   if (starsError) {
@@ -39,6 +39,8 @@ export async function GET() {
       const memberStars = starsByMember.get(profile.id) || [];
       const skills = [...new Set(memberStars.map((s) => s.skill).filter(Boolean))];
       const events = [...new Set(memberStars.map((s) => s.event_name).filter(Boolean))];
+      // Sum star_count (defaults to 1 for legacy records without star_count)
+      const totalStars = memberStars.reduce((sum, s) => sum + (s.star_count ?? 1), 0);
 
       return {
         id: profile.id,
@@ -47,7 +49,7 @@ export async function GET() {
         email: profile.email,
         headline: profile.headline,
         linkedin_url: profile.linkedin_url,
-        star_count: memberStars.length,
+        star_count: totalStars,
         skill: skills.join(", ") || null,
         recent_events: events.slice(0, 3),
       };

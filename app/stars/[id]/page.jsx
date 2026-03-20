@@ -12,21 +12,30 @@ export default async function StarUserProfilePage({ params }) {
     );
   }
 
-  const { data: stars } = await supabase
-    .from("member_stars")
-    .select("id, skill, note, event_name, created_at")
-    .eq("member_id", id)
-    .order("created_at", { ascending: false });
+  const [starsResult, profileResult, tiersResult] = await Promise.all([
+    supabase
+      .from("member_stars")
+      .select("id, skill, note, event_name, star_count, source, created_at")
+      .eq("member_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("profiles")
+      .select("id, full_name, email, avatar_url, headline, linkedin_url")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("star_tiers")
+      .select("tier_name, min_stars, badge_emoji")
+      .order("min_stars", { ascending: false }),
+  ]);
+
+  const stars = starsResult.data;
+  const profile = profileResult.data;
+  const tiers = tiersResult.data || [];
 
   if (!stars || stars.length === 0) {
     notFound();
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, avatar_url, headline, linkedin_url")
-    .eq("id", id)
-    .single();
 
   if (!profile) {
     notFound();
@@ -35,6 +44,8 @@ export default async function StarUserProfilePage({ params }) {
   const displayName =
     profile.full_name || profile.email?.split("@")[0] || "Member";
   const skills = [...new Set(stars.map((s) => s.skill).filter(Boolean))];
+  const totalStars = stars.reduce((sum, s) => sum + (s.star_count ?? 1), 0);
+  const currentTier = tiers.find((t) => totalStars >= t.min_stars) || null;
 
   return (
     <div className="flex flex-col gap-8 p-8">
@@ -56,7 +67,14 @@ export default async function StarUserProfilePage({ params }) {
             </div>
           )}
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900">{displayName}</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl font-bold text-gray-900">{displayName}</h2>
+              {currentTier && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--byu-blue)]/10 px-2.5 py-0.5 text-sm font-medium text-[color:var(--byu-blue)]">
+                  {currentTier.badge_emoji} {currentTier.tier_name}
+                </span>
+              )}
+            </div>
             {profile.email && (
               <p className="mt-1 text-gray-600">{profile.email}</p>
             )}
@@ -76,7 +94,7 @@ export default async function StarUserProfilePage({ params }) {
             <div className="mt-3 flex items-center gap-2">
               <span className="text-2xl">&#9733;</span>
               <span className="text-lg font-semibold text-[color:var(--byu-blue)]">
-                {stars.length} {stars.length === 1 ? "star" : "stars"}
+                {totalStars} {totalStars === 1 ? "star" : "stars"}
               </span>
             </div>
           </div>
@@ -104,10 +122,24 @@ export default async function StarUserProfilePage({ params }) {
           {stars.map((star) => (
             <li key={star.id} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
               <div className="flex items-center gap-2">
-                <span className="text-yellow-500">&#9733;</span>
+                <span className="text-yellow-500">
+                  {(star.star_count ?? 1) > 1
+                    ? "⭐".repeat(Math.min(star.star_count, 5))
+                    : "⭐"}
+                </span>
                 <span className="font-medium text-gray-900">
                   {star.skill || star.event_name || "Recognition"}
                 </span>
+                {star.source === "event_attendance" && (
+                  <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
+                    Event
+                  </span>
+                )}
+                {star.source === "bonus" && (
+                  <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                    Bonus
+                  </span>
+                )}
               </div>
               {star.event_name && star.skill && (
                 <p className="pl-6 text-sm text-gray-500">Event: {star.event_name}</p>
