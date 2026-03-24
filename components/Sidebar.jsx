@@ -11,6 +11,7 @@ import {
   Briefcase,
   LogIn,
   Settings,
+  Bot,
 } from "lucide-react";
 
 const navLinks = [
@@ -20,6 +21,7 @@ const navLinks = [
   { href: "/jobs", label: "Jobs", icon: Briefcase },
   { href: "/login", label: "Member Login", icon: LogIn },
   { href: "/admin", label: "Admin", icon: Settings },
+  { href: "/admin/center", label: "Center", icon: Bot },
 ];
 
 export default function Sidebar() {

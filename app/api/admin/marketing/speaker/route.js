@@ -1,4 +1,5 @@
 import { generateText, Output } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 
 // Find a guest speaker's public profile info via Serper web search
@@ -47,7 +48,7 @@ export async function POST(req) {
     });
 
     const { output: speakerInfo } = await generateText({
-      model: 'google/gemini-2.0-flash',
+      model: anthropic('claude-haiku-4-5-20251001'),
       output: Output.object({ schema: speakerSchema }),
       system: 'You extract structured speaker profile information from web search results for event marketing. Be accurate and concise.',
       prompt: `Extract profile info for speaker "${speakerName}" from these search results:\n\n${snippets}\n\nEvent context: ${eventDescription || 'University club event'}`,

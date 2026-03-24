@@ -1,4 +1,5 @@
 import { generateText, Output } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 import { getSupabaseServerClient } from '@/lib/supabase';
 import { getWeeklyPalette } from '@/lib/social-media';
@@ -36,36 +37,51 @@ export async function POST(req) {
     const speakerCompany = speakerInfo?.company || '';
     const speakerBio = speakerInfo?.bio || '';
 
-    // ── 1. Generate flyer with Gemini image model ────────────────────────────
-    // Images are returned in result.files
-    const flyerPrompt = `Create a professional square (1080x1080) event flyer for "AI in Business Society" at BYU.
-
-Design specs:
-- Solid background: ${palette.bg}
-- Accent/highlight color: ${palette.accent}
-- Text color: ${palette.text}
-- Modern clean layout with bold sans-serif typography
-- Subtle geometric hex-grid or diagonal-lines pattern overlay in slightly lighter background shade
-- TOP: "AI in Business Society" in small caps, thin accent-color underline below
-- CENTER: Large bold title "${eventName}"
-- BELOW TITLE: "${date}" and "${time}" in accent color, small location pin + "${location}"
-${speakerName ? `- SPEAKER SECTION: circular headshot placeholder, "${speakerName}" bold, "${speakerTitle}${speakerCompany ? ` · ${speakerCompany}` : ''}" in smaller text` : ''}
-- BOTTOM: thin accent-color horizontal rule + "abs.byu.edu" in small text
-- Premium Instagram-ready aesthetic`;
+    // ── 1. Generate flyer with Flux 2 via fal.ai ─────────────────────────────
+    const flyerPrompt = `Professional square event flyer for "AI in Business Society" at BYU.
+Solid background color ${palette.bg}, accent color ${palette.accent}, white text.
+Modern clean layout, bold sans-serif typography, subtle geometric pattern overlay.
+Top: "AI in Business Society" in small caps with thin accent underline.
+Center: Large bold title "${eventName}".
+Below title: "${date}" and "${time}" in accent color, location pin icon + "${location}".
+${speakerName ? `Speaker section: "${speakerName}" bold, "${speakerTitle}${speakerCompany ? ` · ${speakerCompany}` : ''}" smaller text.` : ''}
+Bottom: thin accent horizontal rule + "abs.byu.edu" small text.
+Premium Instagram-ready aesthetic, no watermark.`;
 
     let flyerBase64 = null;
-    let flyerMimeType = 'image/png';
+    let flyerMimeType = 'image/jpeg';
 
     try {
-      const imageResult = await generateText({
-        model: 'google/gemini-3.1-flash-image-preview',
-        prompt: flyerPrompt,
+      const falKey = process.env.FAL_KEY;
+      if (!falKey) throw new Error('FAL_KEY not configured');
+
+      const falRes = await fetch('https://fal.run/fal-ai/flux-pro/v1.1', {
+        method: 'POST',
+        headers: {
+          Authorization: `Key ${falKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: flyerPrompt,
+          image_size: { width: 1080, height: 1080 },
+          num_images: 1,
+        }),
       });
-      // Images are in result.files
-      const imageFile = (imageResult.files || []).find(f => f.mediaType?.startsWith('image/'));
-      if (imageFile) {
-        flyerBase64 = Buffer.from(imageFile.data).toString('base64');
-        flyerMimeType = imageFile.mediaType;
+
+      if (!falRes.ok) {
+        const errData = await falRes.json().catch(() => ({}));
+        throw new Error(errData.detail || `fal.ai returned ${falRes.status}`);
+      }
+
+      const falData = await falRes.json();
+      const imageUrl = falData.images?.[0]?.url;
+
+      if (imageUrl) {
+        // Download the image and convert to base64
+        const imgRes = await fetch(imageUrl);
+        const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+        flyerBase64 = imgBuffer.toString('base64');
+        flyerMimeType = falData.images[0].content_type || 'image/jpeg';
       }
     } catch (imgErr) {
       console.error('[marketing/generate] Image generation error:', imgErr.message);
@@ -95,7 +111,7 @@ ${speakerName ? `- SPEAKER SECTION: circular headshot placeholder, "${speakerNam
     ].filter(Boolean).join('\n');
 
     const { output: captions } = await generateText({
-      model: 'google/gemini-2.0-flash',
+      model: anthropic('claude-haiku-4-5-20251001'),
       output: Output.object({ schema: captionSchema }),
       system: 'You are a marketing copywriter for AI in Business Society (ABS), a BYU university club focused on AI and business. Write engaging, professional content. Instagram handle: @abs.byu',
       prompt: `Generate social media captions and a BYU club announcement email:\n\n${captionContext}`,
