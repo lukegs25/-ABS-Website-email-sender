@@ -41,7 +41,7 @@ export async function POST(req) {
 
   try {
     const body = await req.json();
-    const { title, description, event_date, location, event_type, star_value } = body;
+    const { title, description, event_date, location, event_type, star_value, event_password } = body;
 
     if (!title?.trim()) {
       return NextResponse.json({ error: "title is required" }, { status: 400 });
@@ -64,6 +64,7 @@ export async function POST(req) {
         location: location?.trim() || null,
         event_type: event_type?.trim() || "general",
         star_value: starVal,
+        event_password: event_password?.trim() || null,
       })
       .select("*")
       .single();
@@ -94,7 +95,7 @@ export async function PUT(req) {
 
   try {
     const body = await req.json();
-    const { id, title, description, event_date, location, event_type, star_value } = body;
+    const { id, title, description, event_date, location, event_type, star_value, event_password } = body;
 
     if (!id) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
@@ -120,6 +121,7 @@ export async function PUT(req) {
         location: location?.trim() || null,
         event_type: event_type?.trim() || "general",
         star_value: starVal,
+        event_password: event_password?.trim() || null,
       })
       .eq("id", id)
       .select("*")

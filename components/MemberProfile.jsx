@@ -1,6 +1,13 @@
 "use client";
 
-export default function MemberProfile({ user, profile, stars = [], totalStars = null, currentTier = null }) {
+import { useState } from "react";
+import { Award, Crown } from "lucide-react";
+import Link from "next/link";
+import Certificate from "@/components/Certificate";
+
+const REQUIRED_EVENTS = 5;
+
+export default function MemberProfile({ user, profile, stars = [], totalStars = null, currentTier = null, eventsAttended: eventsAttendedProp }) {
   const displayName =
     profile?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Member";
   const avatarUrl =
@@ -9,11 +16,14 @@ export default function MemberProfile({ user, profile, stars = [], totalStars = 
   const headline =
     profile?.headline || user?.user_metadata?.headline || user?.user_metadata?.position;
 
+  const [showCertificate, setShowCertificate] = useState(false);
+
   // If totalStars prop not provided, compute from star records (backward compat)
   const computedTotal = totalStars ?? stars.reduce((sum, s) => sum + (s.star_count ?? 1), 0);
-  const eventsAttended = new Set(
+  const eventsAttended = eventsAttendedProp ?? new Set(
     stars.filter((s) => s.source === "event_attendance" && s.event_id).map((s) => s.event_id)
   ).size;
+  const certificateEarned = eventsAttended >= REQUIRED_EVENTS;
 
   return (
     <div className="flex flex-col gap-6">
@@ -56,6 +66,83 @@ export default function MemberProfile({ user, profile, stars = [], totalStars = 
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Certificate Progress / Download */}
+      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        {certificateEarned ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                <Award size={22} />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">AI Proficiency Certificate Earned!</h3>
+                <p className="text-sm text-gray-500">
+                  You attended {eventsAttended} meetings — well done!
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setShowCertificate(!showCertificate)}
+                className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--byu-blue)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+              >
+                <Award size={16} />
+                {showCertificate ? "Hide Certificate" : "View & Download Certificate"}
+              </button>
+              <Link
+                href="/recruiting"
+                className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100"
+              >
+                <Crown size={16} />
+                Access Premier Recruiting
+              </Link>
+            </div>
+
+            {showCertificate && (
+              <Certificate
+                memberName={displayName}
+                eventsAttended={eventsAttended}
+              />
+            )}
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-500">
+                <Award size={22} />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">AI Proficiency Certificate</h3>
+                <p className="text-sm text-gray-500">
+                  Attend {REQUIRED_EVENTS} meetings to earn your certificate and unlock premier recruiting
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sm text-gray-500">
+                {eventsAttended} of {REQUIRED_EVENTS} meetings
+              </span>
+              <span className="text-sm font-medium text-[color:var(--byu-blue)]">
+                {REQUIRED_EVENTS - eventsAttended} more to go
+              </span>
+            </div>
+            <div className="h-3 w-full rounded-full bg-gray-100">
+              <div
+                className="h-3 rounded-full bg-[color:var(--byu-blue)] transition-all"
+                style={{ width: `${(eventsAttended / REQUIRED_EVENTS) * 100}%` }}
+              />
+            </div>
+            <Link
+              href="/checkin"
+              className="mt-3 inline-flex text-sm font-medium text-[color:var(--byu-blue)] hover:underline"
+            >
+              Check in to a meeting →
+            </Link>
+          </div>
+        )}
       </section>
 
       {stars.length > 0 && (

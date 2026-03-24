@@ -45,6 +45,16 @@ export default async function MemberPage() {
   const totalStars = (stars || []).reduce((sum, s) => sum + (s.star_count ?? 1), 0);
   const currentTier = tiers.find((t) => totalStars >= t.min_stars) || null;
 
+  // Get actual attendance count (more accurate than counting unique star event_ids)
+  let eventsAttended = 0;
+  if (serviceSupabase) {
+    const { count } = await serviceSupabase
+      .from("attendance")
+      .select("id", { count: "exact", head: true })
+      .eq("member_id", user.id);
+    eventsAttended = count || 0;
+  }
+
   return (
     <div className="flex flex-col gap-8 p-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -67,6 +77,7 @@ export default async function MemberPage() {
         stars={stars || []}
         totalStars={totalStars}
         currentTier={currentTier}
+        eventsAttended={eventsAttended}
       />
     </div>
   );

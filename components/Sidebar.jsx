@@ -12,6 +12,8 @@ import {
   LogIn,
   Settings,
   Bot,
+  CheckSquare,
+  Crown,
 } from "lucide-react";
 
 const navLinks = [
@@ -19,6 +21,8 @@ const navLinks = [
   { href: "/student", label: "Student", icon: GraduationCap },
   { href: "/teacher", label: "Faculty", icon: Users },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/checkin", label: "Check In", icon: CheckSquare },
+  { href: "/recruiting", label: "Recruiting", icon: Crown },
   { href: "/login", label: "Member Login", icon: LogIn },
   { href: "/admin", label: "Admin", icon: Settings },
   { href: "/admin/center", label: "Center", icon: Bot },

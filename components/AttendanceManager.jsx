@@ -14,7 +14,15 @@ function EventForm({ initial, onSave, onCancel }) {
     location: initial?.location || "",
     event_type: initial?.event_type || "general",
     star_value: initial?.star_value ?? 1,
+    event_password: initial?.event_password || "",
   });
+
+  function generatePassword() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let pwd = "";
+    for (let i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+    setForm({ ...form, event_password: pwd });
+  }
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -114,6 +122,32 @@ function EventForm({ initial, onSave, onCancel }) {
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[color:var(--byu-blue)] focus:outline-none focus:ring-1 focus:ring-[color:var(--byu-blue)]"
           />
         </div>
+      </div>
+
+      {/* Event Password for self-service check-in */}
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          Check-In Password
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={form.event_password}
+            onChange={(e) => setForm({ ...form, event_password: e.target.value.toUpperCase() })}
+            placeholder="e.g. ABS123"
+            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono tracking-wider focus:border-[color:var(--byu-blue)] focus:outline-none focus:ring-1 focus:ring-[color:var(--byu-blue)]"
+          />
+          <button
+            type="button"
+            onClick={generatePassword}
+            className="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50"
+          >
+            Generate
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-gray-400">
+          Announce this password at the end of the meeting. Members enter it at /checkin to mark attendance.
+        </p>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -419,11 +453,23 @@ export default function AttendanceManager() {
                     {new Date(event.event_date).toLocaleString()}
                     {event.location && ` · ${event.location}`}
                   </p>
-                  <div className="mt-1 flex items-center gap-2">
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
                       {event.event_type}
                     </span>
                     <span className="text-xs text-gray-500">⭐ {event.star_value} stars</span>
+                    {event.event_password && (
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(event.event_password);
+                          setMessage({ type: "success", text: `Password "${event.event_password}" copied!` });
+                        }}
+                        className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-mono font-medium text-blue-700 hover:bg-blue-100"
+                        title="Click to copy password"
+                      >
+                        🔑 {event.event_password}
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
