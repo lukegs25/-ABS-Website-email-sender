@@ -42,21 +42,15 @@ export default function HomePage() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <Link
-            href="/student"
-            className="inline-flex items-center justify-center rounded-xl bg-[color:var(--byu-blue)] px-8 py-3 font-bold uppercase tracking-wide text-white shadow-lg transition-opacity hover:opacity-90"
+          <a
+            href="https://clubs.byu.edu/link/club/18295873491185562"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[color:var(--byu-blue)] px-8 py-3 font-bold uppercase tracking-wide text-white shadow-lg transition-opacity hover:opacity-90"
           >
-            Student Join
-          </Link>
-          <Link
-            href="/teacher"
-            className="inline-flex items-center justify-center rounded-xl border-2 border-[color:var(--byu-blue)] bg-white px-8 py-3 font-bold uppercase tracking-wide text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
-          >
-            Faculty Join
-          </Link>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
+            <Globe size={18} />
+            Join the Club
+          </a>
           <a
             href="https://www.instagram.com/abs.byu/"
             target="_blank"
@@ -74,15 +68,6 @@ export default function HomePage() {
           >
             <Linkedin size={16} />
             LinkedIn
-          </a>
-          <a
-            href="https://clubs.byu.edu/link/club/18295873491185562"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
-          >
-            <Globe size={16} />
-            Join the Club
           </a>
         </div>
       </motion.section>
