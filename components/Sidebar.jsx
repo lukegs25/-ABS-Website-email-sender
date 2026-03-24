@@ -14,6 +14,8 @@ import {
   Bot,
   CheckSquare,
   Crown,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 
 const navLinks = [
@@ -29,23 +31,25 @@ const navLinks = [
 ];
 
 export default function Sidebar() {
-  const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
 
+  // Close mobile nav on route change
   useEffect(() => {
-    setOpen(false);
+    setMobileOpen(false);
   }, [pathname]);
 
+  // Lock body scroll when mobile nav is open
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
+  // Sync collapsed state to a CSS variable on <html> so layout can respond
+  useEffect(() => {
+    document.documentElement.setAttribute("data-sidebar", collapsed ? "collapsed" : "expanded");
+  }, [collapsed]);
 
   return (
     <>
@@ -61,33 +65,17 @@ export default function Sidebar() {
           />
         </Link>
         <button
-          onClick={() => setOpen(!open)}
-          aria-label={open ? "Close menu" : "Open menu"}
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label={mobileOpen ? "Close menu" : "Open menu"}
           className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100"
         >
-          {open ? (
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            >
+          {mobileOpen ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           ) : (
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="3" y1="6" x2="21" y2="6" />
               <line x1="3" y1="12" x2="21" y2="12" />
               <line x1="3" y1="18" x2="21" y2="18" />
@@ -97,17 +85,17 @@ export default function Sidebar() {
       </header>
 
       {/* Mobile overlay */}
-      {open && (
+      {mobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/30 md:hidden"
-          onClick={() => setOpen(false)}
+          onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Mobile slide-out nav */}
       <nav
         className={`fixed left-0 top-14 z-50 flex h-[calc(100vh-3.5rem)] w-64 flex-col bg-white shadow-xl transition-transform duration-200 ease-out md:hidden ${
-          open ? "translate-x-0" : "-translate-x-full"
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-1 flex-col gap-1 p-4">
@@ -123,12 +111,7 @@ export default function Sidebar() {
                     : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                 }`}
               >
-                <Icon
-                  size={18}
-                  className={
-                    active ? "text-[color:var(--byu-blue)]" : "text-gray-400"
-                  }
-                />
+                <Icon size={18} className={active ? "text-[color:var(--byu-blue)]" : "text-gray-400"} />
                 {label}
               </Link>
             );
@@ -137,40 +120,76 @@ export default function Sidebar() {
       </nav>
 
       {/* Desktop sidebar */}
-      <aside className="fixed left-0 top-0 z-50 hidden h-screen w-52 flex-col border-r border-gray-200 bg-white md:flex">
-        <Link href="/" className="border-b border-gray-100 p-4">
-          <Image
-            src="/logo.png"
-            alt="AI in Business Society"
-            width={640}
-            height={160}
-            className="h-12 w-auto object-contain"
-          />
-        </Link>
-        <nav className="flex flex-1 flex-col gap-1 p-3 text-sm">
+      <aside
+        className={`fixed left-0 top-0 z-50 hidden h-screen flex-col border-r border-gray-200 bg-white transition-all duration-200 ease-out md:flex ${
+          collapsed ? "w-16" : "w-52"
+        }`}
+      >
+        {/* Logo */}
+        <div className="flex items-center border-b border-gray-100 p-4">
+          <Link href="/" className={collapsed ? "mx-auto" : ""}>
+            {collapsed ? (
+              <Image
+                src="/logo.png"
+                alt="ABS"
+                width={640}
+                height={160}
+                className="h-8 w-8 object-cover object-left"
+              />
+            ) : (
+              <Image
+                src="/logo.png"
+                alt="AI in Business Society"
+                width={640}
+                height={160}
+                className="h-12 w-auto object-contain"
+              />
+            )}
+          </Link>
+        </div>
+
+        {/* Nav links */}
+        <nav className="flex flex-1 flex-col gap-1 p-2 text-sm">
           {navLinks.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
               <Link
                 key={href}
                 href={href}
+                title={collapsed ? label : undefined}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium transition-colors ${
+                  collapsed ? "justify-center px-0" : ""
+                } ${
                   active
                     ? "bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]"
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
               >
                 <Icon
-                  size={16}
-                  className={
-                    active ? "text-[color:var(--byu-blue)]" : "text-gray-400"
-                  }
+                  size={collapsed ? 20 : 16}
+                  className={active ? "text-[color:var(--byu-blue)]" : "text-gray-400"}
                 />
-                {label}
+                {!collapsed && label}
               </Link>
             );
           })}
         </nav>
+
+        {/* Collapse toggle */}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="flex items-center justify-center gap-2 border-t border-gray-100 p-3 text-xs font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? (
+            <PanelLeftOpen size={18} />
+          ) : (
+            <>
+              <PanelLeftClose size={16} />
+              <span>Collapse</span>
+            </>
+          )}
+        </button>
       </aside>
     </>
   );

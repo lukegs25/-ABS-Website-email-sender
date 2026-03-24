@@ -21,7 +21,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="min-h-screen font-sans antialiased">
         <Sidebar />
-        <main className="min-h-screen bg-gray-50/50 pt-14 md:ml-52 md:pt-0">
+        <main className="min-h-screen bg-gray-50/50 pt-14 md:pt-0 sidebar-main">
           {children}
         </main>
       </body>
