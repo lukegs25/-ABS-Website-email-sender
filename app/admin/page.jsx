@@ -48,6 +48,7 @@ function AdminDashboard() {
     { id: "stars", label: "Stars" },
     { id: "star-tiers", label: "Star Tiers" },
     { id: "marketing", label: "Marketing Agent" },
+    { id: "center", label: "AI Center" },
     { id: "site-editor", label: "Site Editor" },
     { id: "audiences", label: "Audiences", superAdminOnly: true }
   ];
@@ -94,12 +95,12 @@ function AdminDashboard() {
 
             {/* Tab Navigation */}
             <div className="mb-8">
-              <nav className="flex space-x-8 border-b border-gray-200">
+              <nav className="flex overflow-x-auto space-x-4 sm:space-x-6 border-b border-gray-200 -mx-1 px-1 scrollbar-hide">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    className={`shrink-0 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                       activeTab === tab.id
                         ? 'border-[color:var(--byu-blue)] text-[color:var(--byu-blue)]'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -158,6 +159,23 @@ function AdminDashboard() {
               {activeTab === "marketing" && (
                 <div className="p-6">
                   <MarketingAgentTab />
+                </div>
+              )}
+
+              {activeTab === "center" && (
+                <div className="p-6">
+                  <div className="mb-4">
+                    <h2 className="text-xl font-bold text-[color:var(--byu-blue)]">AI Center</h2>
+                    <p className="mt-1 text-sm text-gray-500">
+                      AI-powered command center for managing the ABS website
+                    </p>
+                  </div>
+                  <a
+                    href="/admin/center"
+                    className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--byu-blue)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+                  >
+                    Open AI Center →
+                  </a>
                 </div>
               )}
 

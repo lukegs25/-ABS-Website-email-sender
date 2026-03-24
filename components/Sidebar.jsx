@@ -11,7 +11,6 @@ import {
   Briefcase,
   LogIn,
   Settings,
-  Bot,
   CheckSquare,
   Crown,
   PanelLeftClose,
@@ -27,7 +26,6 @@ const navLinks = [
   { href: "/recruiting", label: "Recruiting", icon: Crown },
   { href: "/login", label: "Member Login", icon: LogIn },
   { href: "/admin", label: "Admin", icon: Settings },
-  { href: "/admin/center", label: "Center", icon: Bot },
 ];
 
 export default function Sidebar() {
