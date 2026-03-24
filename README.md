@@ -18,3 +18,5 @@ RESEND_API_KEY=...
 Notes:
 - Add `public/shakka.png` for the home hero background.
 - Home hero styled like No Code Supply — Mast with big blue "JOIN THE" on white.
+
+See the [/docs](/docs) folder for setup guides, troubleshooting, and feature documentation.
