@@ -10,9 +10,9 @@ export default function Header() {
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm">
           <Link href="/" className="hover:underline">Home</Link>
-          <Link href="/student" className="hover:underline">Student</Link>
-          <Link href="/teacher" className="hover:underline">Teacher</Link>
-          <Link href="/admin" className="hover:underline">Admin</Link>
+          <Link href="/join" className="hover:underline">Join</Link>
+          <Link href="/jobs" className="hover:underline">Jobs</Link>
+          <Link href="/login" className="hover:underline">Login</Link>
         </nav>
       </div>
     </header>
