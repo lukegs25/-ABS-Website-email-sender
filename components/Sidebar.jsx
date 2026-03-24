@@ -1,37 +1,97 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
   Home,
-  GraduationCap,
-  Users,
+  Mail,
   Briefcase,
+  Calendar,
   LogIn,
   Settings,
   CheckSquare,
   Crown,
+  LayoutDashboard,
+  Trophy,
   PanelLeftClose,
   PanelLeftOpen,
+  ChevronDown,
+  User,
+  LogOut,
 } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
-const navLinks = [
+const primaryNavLinks = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/student", label: "Student", icon: GraduationCap },
-  { href: "/teacher", label: "Faculty", icon: Users },
+  { href: "/join", label: "Join Email", icon: Mail },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/#calendar", label: "Events", icon: Calendar },
+];
+
+const dropdownLinks = [
+  { href: "/member", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/settings", label: "Member Settings", icon: Settings },
   { href: "/checkin", label: "Check In", icon: CheckSquare },
   { href: "/recruiting", label: "Recruiting", icon: Crown },
-  { href: "/login", label: "Member Login", icon: LogIn },
-  { href: "/admin", label: "Admin", icon: Settings },
+  { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
 ];
 
 export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [user, setUser] = useState(null);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [mobileUserDropdownOpen, setMobileUserDropdownOpen] = useState(false);
+  const userDropdownRef = useRef(null);
+  const mobileUserDropdownRef = useRef(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase) return;
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user || null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Close user dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target)) {
+        setUserDropdownOpen(false);
+      }
+      if (mobileUserDropdownRef.current && !mobileUserDropdownRef.current.contains(e.target)) {
+        setMobileUserDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    if (supabase) await supabase.auth.signOut();
+    setUser(null);
+    setUserDropdownOpen(false);
+    setMobileUserDropdownOpen(false);
+    router.push("/");
+    router.refresh();
+  }
+
+  const displayName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    "Member";
+
+  const avatarUrl =
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture;
 
   // Close mobile nav on route change
   useEffect(() => {
@@ -97,7 +157,7 @@ export default function Sidebar() {
         }`}
       >
         <div className="flex flex-1 flex-col gap-1 p-4">
-          {navLinks.map(({ href, label, icon: Icon }) => {
+          {primaryNavLinks.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
               <Link
@@ -114,6 +174,61 @@ export default function Sidebar() {
               </Link>
             );
           })}
+
+          <div className="my-2 border-t border-gray-100" />
+
+          {user ? (
+            <div ref={mobileUserDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setMobileUserDropdownOpen((v) => !v)}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-base font-medium text-gray-700 hover:bg-gray-100"
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <User size={18} className="text-gray-400" />
+                )}
+                <span className="flex-1 truncate text-left">{displayName}</span>
+                <ChevronDown size={16} className={`transition-transform ${mobileUserDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+              {mobileUserDropdownOpen && (
+                <div className="ml-4 flex flex-col gap-0.5">
+                  {dropdownLinks.map(({ href, label, icon: Icon }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                      onClick={() => { setMobileUserDropdownOpen(false); setMobileOpen(false); }}
+                    >
+                      <Icon size={16} className="text-gray-400" />
+                      {label}
+                    </Link>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut size={16} />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className={`flex items-center gap-3 rounded-lg px-3 py-3 text-base font-medium transition-colors ${
+                pathname === "/login"
+                  ? "bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              }`}
+            >
+              <LogIn size={18} className={pathname === "/login" ? "text-[color:var(--byu-blue)]" : "text-gray-400"} />
+              Login
+            </Link>
+          )}
         </div>
       </nav>
 
@@ -148,7 +263,7 @@ export default function Sidebar() {
 
         {/* Nav links */}
         <nav className="flex flex-1 flex-col gap-1 p-2 text-sm">
-          {navLinks.map(({ href, label, icon: Icon }) => {
+          {primaryNavLinks.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
               <Link
@@ -171,6 +286,76 @@ export default function Sidebar() {
               </Link>
             );
           })}
+
+          <div className="my-1 border-t border-gray-100" />
+
+          {/* Login / User dropdown */}
+          {user ? (
+            <div className="relative" ref={userDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setUserDropdownOpen((v) => !v)}
+                title={collapsed ? displayName : undefined}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors ${
+                  collapsed ? "justify-center px-0" : ""
+                }`}
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="h-5 w-5 rounded-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <User size={collapsed ? 20 : 16} className="text-gray-400 shrink-0" />
+                )}
+                {!collapsed && (
+                  <>
+                    <span className="flex-1 truncate text-left text-sm">{displayName}</span>
+                    <ChevronDown size={14} className={`transition-transform ${userDropdownOpen ? "rotate-180" : ""}`} />
+                  </>
+                )}
+              </button>
+              {userDropdownOpen && !collapsed && (
+                <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                  {dropdownLinks.map(({ href, label, icon: Icon }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      onClick={() => setUserDropdownOpen(false)}
+                    >
+                      <Icon size={14} className="text-gray-400" />
+                      {label}
+                    </Link>
+                  ))}
+                  <div className="my-1 border-t border-gray-100" />
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut size={14} />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              title={collapsed ? "Login" : undefined}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium transition-colors ${
+                collapsed ? "justify-center px-0" : ""
+              } ${
+                pathname === "/login"
+                  ? "bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              }`}
+            >
+              <LogIn
+                size={collapsed ? 20 : 16}
+                className={pathname === "/login" ? "text-[color:var(--byu-blue)]" : "text-gray-400"}
+              />
+              {!collapsed && "Login"}
+            </Link>
+          )}
         </nav>
 
         {/* Collapse toggle */}
