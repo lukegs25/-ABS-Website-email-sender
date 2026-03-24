@@ -1,7 +1,7 @@
 import UpcomingEvents from "./UpcomingEvents";
 
 const GOOGLE_CALENDAR_EMBED_URL =
-  "https://calendar.google.com/calendar/embed?src=abs.byu.club%40gmail.com&ctz=America%2FDenver";
+  "https://calendar.google.com/calendar/embed?src=abs.byu.club%40gmail.com&ctz=America%2FDenver&mode=AGENDA&showTitle=0&showPrint=0&showTabs=1&showCalendars=0";
 
 export default function CalendarSection() {
   return (
@@ -18,7 +18,7 @@ export default function CalendarSection() {
       <div className="space-y-4">
         <UpcomingEvents />
 
-        <div className="h-[280px] w-full overflow-hidden rounded-lg border border-gray-200 sm:h-[400px] md:h-[500px]">
+        <div className="h-[400px] w-full overflow-hidden rounded-lg border border-gray-200 sm:h-[500px] md:h-[600px]">
           <iframe
             src={GOOGLE_CALENDAR_EMBED_URL}
             title="AI in Business Society Google Calendar"
