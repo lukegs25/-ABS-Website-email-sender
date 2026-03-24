@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import RSVPButton from "./RSVPButton";
 
 const TYPE_COLORS = {
   "Speaker Event": "bg-blue-100 text-blue-700",
@@ -114,16 +115,25 @@ export default function UpcomingEvents() {
               <span className="text-xs text-gray-500">({e.affiliation})</span>
             )}
             {e.location && <span className="text-sm text-gray-500">• {e.location}</span>}
-            {e.htmlLink && (
-              <a
-                href={e.htmlLink}
-                target="_blank"
-                rel="noreferrer"
-                className="ml-auto text-sm text-[color:var(--byu-blue)] underline hover:no-underline"
-              >
-                Add to calendar
-              </a>
-            )}
+            <div className="ml-auto flex items-center gap-2">
+              {e.id && (
+                <RSVPButton
+                  eventId={e.id}
+                  eventTitle={e.summary}
+                  eventDate={e.start}
+                />
+              )}
+              {e.htmlLink && (
+                <a
+                  href={e.htmlLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-[color:var(--byu-blue)] underline hover:no-underline"
+                >
+                  Add to calendar
+                </a>
+              )}
+            </div>
           </li>
         ))}
       </ul>
