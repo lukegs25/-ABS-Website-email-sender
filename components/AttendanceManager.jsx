@@ -487,11 +487,19 @@ export default function AttendanceManager() {
       const sheetData = await sheetRes.json();
       if (sheetData.events?.length > 0) {
         setCalendarEvents(sheetData.events);
-      } else {
-        const calRes = await fetch("/api/calendar/events?days=14");
-        const calData = await calRes.json();
-        setCalendarEvents(calData.events || []);
+        return;
       }
+      // Fallback to Google Calendar API
+      const calRes = await fetch("/api/calendar/events?days=30");
+      const calData = await calRes.json();
+      if (calData.events?.length > 0) {
+        setCalendarEvents(calData.events);
+        return;
+      }
+      // Final fallback to admin calendar endpoint
+      const adminRes = await fetch("/api/admin/calendar/events?days=30");
+      const adminData = await adminRes.json();
+      setCalendarEvents(adminData.events || []);
     } catch {
       setCalendarEvents([]);
     } finally {
