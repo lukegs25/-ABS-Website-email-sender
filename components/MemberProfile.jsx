@@ -7,7 +7,7 @@ import Certificate from "@/components/Certificate";
 
 const REQUIRED_EVENTS = 5;
 
-export default function MemberProfile({ user, profile, stars = [], totalStars = null, currentTier = null, eventsAttended: eventsAttendedProp }) {
+export default function MemberProfile({ user, profile, stars = [], totalStars = null, currentTier = null, eventsAttended: eventsAttendedProp, eventHistory = [] }) {
   const displayName =
     profile?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "Member";
   const avatarUrl =
@@ -191,6 +191,55 @@ export default function MemberProfile({ user, profile, stars = [], totalStars = 
           <p className="text-gray-600">
             You haven&apos;t earned any stars yet. Participate in ABS events to earn recognition!
           </p>
+        </section>
+      )}
+
+      {/* Event attendance history */}
+      {eventHistory.length > 0 && (
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-bold text-[color:var(--byu-blue)]">
+            Event History
+          </h3>
+          <ul className="divide-y divide-gray-100">
+            {eventHistory.map((record) => {
+              const ev = record.events;
+              return (
+                <li key={record.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                  <span className="mt-0.5 text-yellow-500">⭐</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">
+                      {ev?.title || "Event"}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {ev?.event_date
+                        ? new Date(ev.event_date).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : ""}
+                      {record.checked_in_at && (
+                        <span className="ml-2">
+                          · Checked in{" "}
+                          {new Date(record.checked_in_at).toLocaleTimeString("en-US", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      )}
+                    </p>
+                    {ev?.location && (
+                      <p className="text-xs text-gray-400">{ev.location}</p>
+                    )}
+                  </div>
+                  <span className="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700">
+                    Attended
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         </section>
       )}
     </div>
