@@ -75,7 +75,7 @@ function AdminDashboard() {
           </div>
         </div>
         
-        <section className="relative z-10 py-8 pl-0 pr-8 sm:pl-0 sm:pr-12 lg:pl-0 lg:pr-24 xl:pr-40 2xl:pr-56 -ml-6 sm:-ml-6 lg:-ml-8 xl:-ml-10">
+        <section className="relative z-10 py-8 px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-[color:var(--byu-blue)]">Admin Dashboard</h1>
             <p className="mt-2 text-gray-600">

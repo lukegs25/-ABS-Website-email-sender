@@ -482,9 +482,16 @@ export default function AttendanceManager() {
   async function loadCalendarEvents() {
     setLoadingCalendar(true);
     try {
-      const res = await fetch("/api/admin/calendar/events?days=14");
-      const data = await res.json();
-      setCalendarEvents(data.events || []);
+      // Use the same source as the front page: Google Sheet first, then Calendar API fallback
+      const sheetRes = await fetch("/api/calendar/sheet?days=30");
+      const sheetData = await sheetRes.json();
+      if (sheetData.events?.length > 0) {
+        setCalendarEvents(sheetData.events);
+      } else {
+        const calRes = await fetch("/api/calendar/events?days=14");
+        const calData = await calRes.json();
+        setCalendarEvents(calData.events || []);
+      }
     } catch {
       setCalendarEvents([]);
     } finally {
@@ -658,9 +665,28 @@ export default function AttendanceManager() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 truncate">{ce.summary}</p>
                       <p className="text-sm text-gray-500">
-                        {new Date(ce.start).toLocaleString()}
+                        {new Date(ce.start).toLocaleString("en-US", {
+                          weekday: "short", month: "short", day: "numeric",
+                          hour: "numeric", minute: "2-digit", timeZone: "America/Denver",
+                        })}
                         {ce.location && ` · ${ce.location}`}
                       </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        {ce.type && (
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                            ce.type === "Speaker Event" ? "bg-blue-100 text-blue-700" :
+                            ce.type === "AI Bootcamp" ? "bg-purple-100 text-purple-700" :
+                            ce.type === "Social" ? "bg-green-100 text-green-700" :
+                            ce.type === "Hackathon" ? "bg-orange-100 text-orange-700" :
+                            "bg-gray-100 text-gray-600"
+                          }`}>
+                            {ce.type}
+                          </span>
+                        )}
+                        {ce.affiliation && (
+                          <span className="text-xs text-gray-500">({ce.affiliation})</span>
+                        )}
+                      </div>
                       {ce.description && (
                         <p className="text-xs text-gray-400 mt-1 line-clamp-2">{ce.description}</p>
                       )}
