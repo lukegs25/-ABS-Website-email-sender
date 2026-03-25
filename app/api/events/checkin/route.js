@@ -96,16 +96,19 @@ export async function POST(req) {
       const memberId = profileRow.id;
       const starValue = event.star_value ?? 1;
 
-      // Insert attendance record (ignore duplicate)
-      await supabase
+      // Insert attendance record (ignore duplicate — member may have already checked in)
+      const { error: attendanceError } = await supabase
         .from("attendance")
         .insert({
           member_id: memberId,
           event_id: event.id,
           check_in_method: "code",
-        })
-        .select("id")
-        .single();
+        });
+
+      if (attendanceError && attendanceError.code !== "23505") {
+        console.error("[POST /api/events/checkin] attendance insert:", attendanceError);
+        // Non-fatal — continue to award stars
+      }
 
       // Award stars
       if (starValue > 0) {
@@ -127,6 +130,8 @@ export async function POST(req) {
             .update({ star_awarded: true })
             .eq("event_id", event.id)
             .eq("subscriber_email", normalizedEmail);
+        } else {
+          console.error("[POST /api/events/checkin] star insert:", starError);
         }
       }
     }

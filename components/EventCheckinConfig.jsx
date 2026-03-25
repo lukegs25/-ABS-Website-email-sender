@@ -15,7 +15,8 @@ import {
   Clock,
 } from "lucide-react";
 
-const BASE_URL = "https://www.aiinbusinesssociety.org";
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_URL || "https://www.aiinbusinesssociety.org";
 
 function generateCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";

@@ -24,10 +24,12 @@ CREATE INDEX IF NOT EXISTS idx_event_checkins_event ON event_checkins(event_id);
 -- RLS policies
 ALTER TABLE event_checkins ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can insert their own checkin"
+-- Allow inserts via application layer (code validation happens in API route before insert)
+CREATE POLICY "Service role can insert checkins"
   ON event_checkins FOR INSERT
   WITH CHECK (true);
 
-CREATE POLICY "Admins can view all checkins"
+-- Allow service role to read all records (used by admin API routes)
+CREATE POLICY "Service role can read all checkins"
   ON event_checkins FOR SELECT
   USING (true);
