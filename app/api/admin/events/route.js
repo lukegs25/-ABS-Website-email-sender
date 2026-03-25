@@ -92,7 +92,7 @@ export async function POST(req) {
 
           if (updateErr) {
             console.error("[POST /api/admin/events] update existing:", updateErr);
-            return NextResponse.json({ error: updateErr.message }, { status: 500 });
+            return NextResponse.json({ error: updateErr.message, details: updateErr.details, hint: updateErr.hint, code: updateErr.code }, { status: 500 });
           }
           return NextResponse.json({ success: true, message: "Event updated", data: updated });
         }
@@ -139,7 +139,7 @@ export async function POST(req) {
 
     if (error) {
       console.error("[POST /api/admin/events] final error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: error.message, details: error.details, hint: error.hint, code: error.code }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, message: "Event created", data }, { status: 201 });
