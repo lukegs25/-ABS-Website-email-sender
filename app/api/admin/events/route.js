@@ -55,31 +55,37 @@ export async function POST(req) {
       return NextResponse.json({ error: "star_value must be a non-negative integer" }, { status: 400 });
     }
 
-    // If this came from a Google Calendar event, check if it already exists
+    // If this came from a calendar event, check if it already exists
     if (google_calendar_id) {
-      const { data: existing } = await supabase
-        .from("events")
-        .select("*")
-        .eq("google_calendar_id", google_calendar_id)
-        .maybeSingle();
-
-      if (existing) {
-        // Update the existing event with new password
-        const { data: updated, error: updateErr } = await supabase
+      try {
+        const { data: existing } = await supabase
           .from("events")
-          .update({
-            event_password: event_password?.trim() || null,
-            password_generated_at: password_generated_at || null,
-          })
-          .eq("id", existing.id)
           .select("*")
-          .single();
+          .eq("google_calendar_id", google_calendar_id)
+          .maybeSingle();
 
-        if (updateErr) {
-          console.error("[POST /api/admin/events] update existing:", updateErr);
-          return NextResponse.json({ error: updateErr.message }, { status: 500 });
+        if (existing) {
+          const updateFields = {
+            event_password: event_password?.trim() || null,
+          };
+          if (password_generated_at) updateFields.password_generated_at = password_generated_at;
+
+          const { data: updated, error: updateErr } = await supabase
+            .from("events")
+            .update(updateFields)
+            .eq("id", existing.id)
+            .select("*")
+            .single();
+
+          if (updateErr) {
+            console.error("[POST /api/admin/events] update existing:", updateErr);
+            return NextResponse.json({ error: updateErr.message }, { status: 500 });
+          }
+          return NextResponse.json({ success: true, message: "Event updated", data: updated });
         }
-        return NextResponse.json({ success: true, message: "Event updated", data: updated });
+      } catch (lookupErr) {
+        // google_calendar_id column may not exist yet — continue to insert without it
+        console.warn("[POST /api/admin/events] lookup by google_calendar_id failed:", lookupErr.message);
       }
     }
 
@@ -91,15 +97,30 @@ export async function POST(req) {
       event_type: event_type?.trim() || "general",
       star_value: starVal,
       event_password: event_password?.trim() || null,
-      password_generated_at: password_generated_at || null,
     };
+    if (password_generated_at) insertData.password_generated_at = password_generated_at;
+
+    // Try with google_calendar_id first, fall back without it if column doesn't exist
     if (google_calendar_id) insertData.google_calendar_id = google_calendar_id;
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("events")
       .insert(insertData)
       .select("*")
       .single();
+
+    // If insert failed (e.g. unknown column), retry without google_calendar_id
+    if (error && google_calendar_id) {
+      console.warn("[POST /api/admin/events] insert failed, retrying without google_calendar_id:", error.message);
+      delete insertData.google_calendar_id;
+      const retry = await supabase
+        .from("events")
+        .insert(insertData)
+        .select("*")
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.error("[POST /api/admin/events]", error);
