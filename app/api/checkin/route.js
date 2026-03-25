@@ -35,7 +35,7 @@ export async function POST(req) {
 
     const { data: events, error: eventError } = await serviceClient
       .from("events")
-      .select("id, title, star_value, event_date")
+      .select("id, title, star_value, event_date, password_generated_at")
       .eq("event_password", password.trim())
       .gte("event_date", cutoff.toISOString())
       .order("event_date", { ascending: false })
@@ -54,6 +54,19 @@ export async function POST(req) {
     }
 
     const event = events[0];
+
+    // Enforce 5-minute password expiry if password_generated_at is set
+    if (event.password_generated_at) {
+      const generatedAt = new Date(event.password_generated_at);
+      const now = new Date();
+      const fiveMinutes = 5 * 60 * 1000;
+      if (now - generatedAt > fiveMinutes) {
+        return NextResponse.json(
+          { error: "This check-in password has expired. Ask your event host for a new one." },
+          { status: 410 }
+        );
+      }
+    }
 
     // Insert attendance record
     const { data: attendanceRecord, error: attendanceError } = await serviceClient

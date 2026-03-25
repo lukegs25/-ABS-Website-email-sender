@@ -17,7 +17,6 @@ import {
   Trophy,
   PanelLeftClose,
   PanelLeftOpen,
-  ChevronDown,
   User,
   LogOut,
 } from "lucide-react";
@@ -30,7 +29,7 @@ const primaryNavLinks = [
   { href: "/#calendar", label: "Events", icon: Calendar },
 ];
 
-const dropdownLinks = [
+const userLinks = [
   { href: "/member", label: "Dashboard", icon: LayoutDashboard },
   { href: "/settings", label: "Member Settings", icon: Settings },
   { href: "/checkin", label: "Check In", icon: CheckSquare },
@@ -40,15 +39,15 @@ const dropdownLinks = [
 
 export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true); // Start collapsed
+  const [pinned, setPinned] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const [user, setUser] = useState(null);
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [mobileUserDropdownOpen, setMobileUserDropdownOpen] = useState(false);
-  const userDropdownRef = useRef(null);
-  const mobileUserDropdownRef = useRef(null);
+  const sidebarRef = useRef(null);
   const pathname = usePathname();
   const router = useRouter();
 
+  // Auth via Supabase client
   useEffect(() => {
     const supabase = createClient();
     if (!supabase) return;
@@ -59,26 +58,10 @@ export default function Sidebar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Close user dropdown on outside click
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target)) {
-        setUserDropdownOpen(false);
-      }
-      if (mobileUserDropdownRef.current && !mobileUserDropdownRef.current.contains(e.target)) {
-        setMobileUserDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   async function handleSignOut() {
     const supabase = createClient();
     if (supabase) await supabase.auth.signOut();
     setUser(null);
-    setUserDropdownOpen(false);
-    setMobileUserDropdownOpen(false);
     router.push("/");
     router.refresh();
   }
@@ -104,10 +87,20 @@ export default function Sidebar() {
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
-  // Sync collapsed state to a CSS variable on <html> so layout can respond
+  // Desktop: expand on hover, collapse when mouse leaves (unless pinned)
+  const isExpanded = pinned || hovered;
+
+  // Sync to CSS
   useEffect(() => {
-    document.documentElement.setAttribute("data-sidebar", collapsed ? "collapsed" : "expanded");
-  }, [collapsed]);
+    document.documentElement.setAttribute(
+      "data-sidebar",
+      isExpanded ? "expanded" : "collapsed"
+    );
+  }, [isExpanded]);
+
+  const togglePin = () => {
+    setPinned((p) => !p);
+  };
 
   return (
     <>
@@ -177,44 +170,44 @@ export default function Sidebar() {
 
           <div className="my-2 border-t border-gray-100" />
 
+          {/* User section — always expanded, no dropdown toggle */}
           {user ? (
-            <div ref={mobileUserDropdownRef}>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-3 rounded-lg px-3 py-3">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="h-7 w-7 rounded-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]">
+                    <User size={16} />
+                  </div>
+                )}
+                <span className="flex-1 truncate text-base font-semibold text-gray-900">{displayName}</span>
+              </div>
+              {userLinks.map(({ href, label, icon: Icon }) => {
+                const active = pathname === href;
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Icon size={16} className={active ? "text-[color:var(--byu-blue)]" : "text-gray-400"} />
+                    {label}
+                  </Link>
+                );
+              })}
               <button
                 type="button"
-                onClick={() => setMobileUserDropdownOpen((v) => !v)}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-base font-medium text-gray-700 hover:bg-gray-100"
+                onClick={handleSignOut}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
               >
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt={displayName} className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />
-                ) : (
-                  <User size={18} className="text-gray-400" />
-                )}
-                <span className="flex-1 truncate text-left">{displayName}</span>
-                <ChevronDown size={16} className={`transition-transform ${mobileUserDropdownOpen ? "rotate-180" : ""}`} />
+                <LogOut size={16} />
+                Logout
               </button>
-              {mobileUserDropdownOpen && (
-                <div className="ml-4 flex flex-col gap-0.5">
-                  {dropdownLinks.map(({ href, label, icon: Icon }) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                      onClick={() => { setMobileUserDropdownOpen(false); setMobileOpen(false); }}
-                    >
-                      <Icon size={16} className="text-gray-400" />
-                      {label}
-                    </Link>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
-                  >
-                    <LogOut size={16} />
-                    Logout
-                  </button>
-                </div>
-              )}
             </div>
           ) : (
             <Link
@@ -232,16 +225,19 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar — auto-collapses, expands on hover */}
       <aside
+        ref={sidebarRef}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         className={`fixed left-0 top-0 z-50 hidden h-screen flex-col border-r border-gray-200 bg-white transition-all duration-200 ease-out md:flex ${
-          collapsed ? "w-16" : "w-52"
+          isExpanded ? "w-52" : "w-16"
         }`}
       >
         {/* Logo */}
         <div className="flex items-center border-b border-gray-100 p-4">
-          <Link href="/" className={collapsed ? "mx-auto" : ""}>
-            {collapsed ? (
+          <Link href="/" className={!isExpanded ? "mx-auto" : ""}>
+            {!isExpanded ? (
               <Image
                 src="/logo.png"
                 alt="ABS"
@@ -269,9 +265,9 @@ export default function Sidebar() {
               <Link
                 key={href}
                 href={href}
-                title={collapsed ? label : undefined}
+                title={!isExpanded ? label : undefined}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium transition-colors ${
-                  collapsed ? "justify-center px-0" : ""
+                  !isExpanded ? "justify-center px-0" : ""
                 } ${
                   active
                     ? "bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]"
@@ -279,70 +275,79 @@ export default function Sidebar() {
                 }`}
               >
                 <Icon
-                  size={collapsed ? 20 : 16}
+                  size={!isExpanded ? 20 : 16}
                   className={active ? "text-[color:var(--byu-blue)]" : "text-gray-400"}
                 />
-                {!collapsed && label}
+                {isExpanded && label}
               </Link>
             );
           })}
 
           <div className="my-1 border-t border-gray-100" />
 
-          {/* Login / User dropdown */}
-          {user ? (
-            <div className="relative" ref={userDropdownRef}>
+          {/* User section — always visible when expanded (no dropdown) */}
+          {user && isExpanded && (
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]">
+                    <User size={14} />
+                  </div>
+                )}
+                <span className="flex-1 truncate text-sm font-semibold text-gray-900">{displayName}</span>
+              </div>
+              {userLinks.map(({ href, label, icon: Icon }) => {
+                const active = pathname === href;
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                      active
+                        ? "bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Icon size={14} className={active ? "text-[color:var(--byu-blue)]" : "text-gray-400"} />
+                    {label}
+                  </Link>
+                );
+              })}
               <button
                 type="button"
-                onClick={() => setUserDropdownOpen((v) => !v)}
-                title={collapsed ? displayName : undefined}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors ${
-                  collapsed ? "justify-center px-0" : ""
-                }`}
+                onClick={handleSignOut}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50"
               >
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt={displayName} className="h-5 w-5 rounded-full object-cover" referrerPolicy="no-referrer" />
-                ) : (
-                  <User size={collapsed ? 20 : 16} className="text-gray-400 shrink-0" />
-                )}
-                {!collapsed && (
-                  <>
-                    <span className="flex-1 truncate text-left text-sm">{displayName}</span>
-                    <ChevronDown size={14} className={`transition-transform ${userDropdownOpen ? "rotate-180" : ""}`} />
-                  </>
-                )}
+                <LogOut size={14} />
+                Logout
               </button>
-              {userDropdownOpen && !collapsed && (
-                <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                  {dropdownLinks.map(({ href, label, icon: Icon }) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setUserDropdownOpen(false)}
-                    >
-                      <Icon size={14} className="text-gray-400" />
-                      {label}
-                    </Link>
-                  ))}
-                  <div className="my-1 border-t border-gray-100" />
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                  >
-                    <LogOut size={14} />
-                    Logout
-                  </button>
-                </div>
-              )}
             </div>
-          ) : (
+          )}
+
+          {/* Collapsed user icon */}
+          {user && !isExpanded && (
+            <Link
+              href="/member"
+              title={displayName}
+              className="flex items-center justify-center rounded-lg py-2.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={displayName} className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                <User size={20} />
+              )}
+            </Link>
+          )}
+
+          {/* Login link */}
+          {!user && (
             <Link
               href="/login"
-              title={collapsed ? "Login" : undefined}
+              title={!isExpanded ? "Login" : undefined}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium transition-colors ${
-                collapsed ? "justify-center px-0" : ""
+                !isExpanded ? "justify-center px-0" : ""
               } ${
                 pathname === "/login"
                   ? "bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]"
@@ -350,27 +355,27 @@ export default function Sidebar() {
               }`}
             >
               <LogIn
-                size={collapsed ? 20 : 16}
+                size={!isExpanded ? 20 : 16}
                 className={pathname === "/login" ? "text-[color:var(--byu-blue)]" : "text-gray-400"}
               />
-              {!collapsed && "Login"}
+              {isExpanded && "Login"}
             </Link>
           )}
         </nav>
 
-        {/* Collapse toggle */}
+        {/* Pin/collapse toggle */}
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={togglePin}
           className="flex items-center justify-center gap-2 border-t border-gray-100 p-3 text-xs font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors"
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
         >
-          {collapsed ? (
-            <PanelLeftOpen size={18} />
-          ) : (
+          {isExpanded ? (
             <>
               <PanelLeftClose size={16} />
-              <span>Collapse</span>
+              {pinned ? <span>Unpin</span> : <span>Pin open</span>}
             </>
+          ) : (
+            <PanelLeftOpen size={18} />
           )}
         </button>
       </aside>

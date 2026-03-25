@@ -41,7 +41,7 @@ export async function POST(req) {
 
   try {
     const body = await req.json();
-    const { title, description, event_date, location, event_type, star_value, event_password } = body;
+    const { title, description, event_date, location, event_type, star_value, event_password, password_generated_at, google_calendar_id } = body;
 
     if (!title?.trim()) {
       return NextResponse.json({ error: "title is required" }, { status: 400 });
@@ -55,17 +55,49 @@ export async function POST(req) {
       return NextResponse.json({ error: "star_value must be a non-negative integer" }, { status: 400 });
     }
 
+    // If this came from a Google Calendar event, check if it already exists
+    if (google_calendar_id) {
+      const { data: existing } = await supabase
+        .from("events")
+        .select("*")
+        .eq("google_calendar_id", google_calendar_id)
+        .maybeSingle();
+
+      if (existing) {
+        // Update the existing event with new password
+        const { data: updated, error: updateErr } = await supabase
+          .from("events")
+          .update({
+            event_password: event_password?.trim() || null,
+            password_generated_at: password_generated_at || null,
+          })
+          .eq("id", existing.id)
+          .select("*")
+          .single();
+
+        if (updateErr) {
+          console.error("[POST /api/admin/events] update existing:", updateErr);
+          return NextResponse.json({ error: updateErr.message }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, message: "Event updated", data: updated });
+      }
+    }
+
+    const insertData = {
+      title: title.trim(),
+      description: description?.trim() || null,
+      event_date,
+      location: location?.trim() || null,
+      event_type: event_type?.trim() || "general",
+      star_value: starVal,
+      event_password: event_password?.trim() || null,
+      password_generated_at: password_generated_at || null,
+    };
+    if (google_calendar_id) insertData.google_calendar_id = google_calendar_id;
+
     const { data, error } = await supabase
       .from("events")
-      .insert({
-        title: title.trim(),
-        description: description?.trim() || null,
-        event_date,
-        location: location?.trim() || null,
-        event_type: event_type?.trim() || "general",
-        star_value: starVal,
-        event_password: event_password?.trim() || null,
-      })
+      .insert(insertData)
       .select("*")
       .single();
 
@@ -95,7 +127,7 @@ export async function PUT(req) {
 
   try {
     const body = await req.json();
-    const { id, title, description, event_date, location, event_type, star_value, event_password } = body;
+    const { id, title, description, event_date, location, event_type, star_value, event_password, password_generated_at } = body;
 
     if (!id) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
@@ -112,17 +144,22 @@ export async function PUT(req) {
       return NextResponse.json({ error: "star_value must be a non-negative integer" }, { status: 400 });
     }
 
+    const updateData = {
+      title: title.trim(),
+      description: description?.trim() || null,
+      event_date,
+      location: location?.trim() || null,
+      event_type: event_type?.trim() || "general",
+      star_value: starVal,
+      event_password: event_password?.trim() || null,
+    };
+    if (password_generated_at !== undefined) {
+      updateData.password_generated_at = password_generated_at;
+    }
+
     const { data, error } = await supabase
       .from("events")
-      .update({
-        title: title.trim(),
-        description: description?.trim() || null,
-        event_date,
-        location: location?.trim() || null,
-        event_type: event_type?.trim() || "general",
-        star_value: starVal,
-        event_password: event_password?.trim() || null,
-      })
+      .update(updateData)
       .eq("id", id)
       .select("*")
       .single();

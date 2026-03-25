@@ -25,10 +25,10 @@ body {
 /* Desktop sidebar collapse — main content margin responds to data attribute */
 @media (min-width: 768px) {
   .sidebar-main {
-    margin-left: 13rem; /* 208px = w-52 */
+    margin-left: 4rem; /* 64px = w-16, collapsed by default */
     transition: margin-left 200ms ease-out;
   }
-  html[data-sidebar="collapsed"] .sidebar-main {
-    margin-left: 4rem; /* 64px = w-16 */
+  html[data-sidebar="expanded"] .sidebar-main {
+    margin-left: 13rem; /* 208px = w-52 */
   }
 }

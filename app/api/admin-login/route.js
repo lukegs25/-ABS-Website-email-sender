@@ -66,7 +66,7 @@ export async function POST(req) {
           sameSite: 'lax',
           secure: process.env.NODE_ENV === 'production',
           path: '/',
-          maxAge: 60 * 60 * 2,
+          maxAge: 60 * 60 * 24 * 30,
         });
         return NextResponse.json({ ok: true, admin_type: forceAdminType || 'SuperAdmin', simulated: true });
       }
@@ -150,7 +150,7 @@ export async function POST(req) {
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 60 * 60 * 2,
+      maxAge: 60 * 60 * 24 * 30,
     });
 
     console.log('[POST /api/admin-login] Login successful');
@@ -191,7 +191,16 @@ export async function GET() {
         email: session.email,
         admin_type: session.admin_type
       });
-      
+
+      // Refresh the cookie on each check to keep active users logged in
+      cookieStore.set('admin_auth', JSON.stringify({ ...session, t: Date.now() }), {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+      });
+
       return NextResponse.json({
         ok: true,
         email: session.email,
