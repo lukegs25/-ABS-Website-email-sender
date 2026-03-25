@@ -618,15 +618,8 @@ export default function AttendanceManager() {
     );
   }
 
-  // Find which calendar events already have a linked Supabase event
-  const linkedCalendarIds = new Set(events.filter((e) => e.google_calendar_id).map((e) => e.google_calendar_id));
-
-  // Filter calendar events: show today's and upcoming events not yet in the past
-  const now = new Date();
-  const upcomingCalEvents = calendarEvents.filter((ce) => {
-    const eventEnd = new Date(ce.end || ce.start);
-    return eventEnd >= new Date(now.getTime() - 2 * 60 * 60 * 1000); // include events that ended up to 2 hours ago
-  });
+  // Calendar events are already filtered to upcoming by the API — show them all
+  const upcomingCalEvents = calendarEvents;
 
   return (
     <div className="flex flex-col gap-6">
