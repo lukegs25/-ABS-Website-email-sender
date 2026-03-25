@@ -70,12 +70,25 @@ export async function POST(req) {
           };
           if (password_generated_at) updateFields.password_generated_at = password_generated_at;
 
-          const { data: updated, error: updateErr } = await supabase
+          let { data: updated, error: updateErr } = await supabase
             .from("events")
             .update(updateFields)
             .eq("id", existing.id)
             .select("*")
             .single();
+
+          // If password_generated_at column doesn't exist, retry without it
+          if (updateErr && password_generated_at) {
+            console.warn("[POST /api/admin/events] update failed, retrying without password_generated_at:", updateErr.message);
+            const retry = await supabase
+              .from("events")
+              .update({ event_password: event_password?.trim() || null })
+              .eq("id", existing.id)
+              .select("*")
+              .single();
+            updated = retry.data;
+            updateErr = retry.error;
+          }
 
           if (updateErr) {
             console.error("[POST /api/admin/events] update existing:", updateErr);
@@ -89,6 +102,7 @@ export async function POST(req) {
       }
     }
 
+    // Base insert — only use columns guaranteed to exist
     const insertData = {
       title: title.trim(),
       description: description?.trim() || null,
@@ -98,21 +112,22 @@ export async function POST(req) {
       star_value: starVal,
       event_password: event_password?.trim() || null,
     };
-    if (password_generated_at) insertData.password_generated_at = password_generated_at;
 
-    // Try with google_calendar_id first, fall back without it if column doesn't exist
-    if (google_calendar_id) insertData.google_calendar_id = google_calendar_id;
+    // Try adding optional new columns
+    const extraFields = {};
+    if (password_generated_at) extraFields.password_generated_at = password_generated_at;
+    if (google_calendar_id) extraFields.google_calendar_id = google_calendar_id;
 
+    // First attempt: with all fields
     let { data, error } = await supabase
       .from("events")
-      .insert(insertData)
+      .insert({ ...insertData, ...extraFields })
       .select("*")
       .single();
 
-    // If insert failed (e.g. unknown column), retry without google_calendar_id
-    if (error && google_calendar_id) {
-      console.warn("[POST /api/admin/events] insert failed, retrying without google_calendar_id:", error.message);
-      delete insertData.google_calendar_id;
+    // If failed, retry with just base fields (new columns may not exist)
+    if (error) {
+      console.warn("[POST /api/admin/events] insert failed, retrying with base fields only:", error.message);
       const retry = await supabase
         .from("events")
         .insert(insertData)
@@ -123,7 +138,7 @@ export async function POST(req) {
     }
 
     if (error) {
-      console.error("[POST /api/admin/events]", error);
+      console.error("[POST /api/admin/events] final error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
