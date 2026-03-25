@@ -47,12 +47,33 @@ export default async function MemberPage() {
 
   // Get actual attendance count (more accurate than counting unique star event_ids)
   let eventsAttended = 0;
+  let eventHistory = [];
   if (serviceSupabase) {
     const { count } = await serviceSupabase
       .from("attendance")
       .select("id", { count: "exact", head: true })
       .eq("member_id", user.id);
     eventsAttended = count || 0;
+
+    // Fetch event history with event details
+    const { data: historyData } = await serviceSupabase
+      .from("attendance")
+      .select(`
+        id,
+        checked_in_at,
+        check_in_method,
+        events (
+          id,
+          title,
+          event_date,
+          location,
+          event_type
+        )
+      `)
+      .eq("member_id", user.id)
+      .order("checked_in_at", { ascending: false })
+      .limit(20);
+    eventHistory = historyData || [];
   }
 
   return (
@@ -78,6 +99,7 @@ export default async function MemberPage() {
         totalStars={totalStars}
         currentTier={currentTier}
         eventsAttended={eventsAttended}
+        eventHistory={eventHistory}
       />
     </div>
   );
