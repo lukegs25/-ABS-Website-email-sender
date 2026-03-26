@@ -342,7 +342,7 @@ function AttendancePanel({ event, members, onClose }) {
         <div>
           <h4 className="font-bold text-[color:var(--byu-blue)]">{event.title}</h4>
           <p className="text-sm text-gray-500">
-            {new Date(event.event_date).toLocaleString()} · {event.star_value} stars per attendee
+            {new Date(event.event_date).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Denver" })} · {event.star_value} stars per attendee
           </p>
         </div>
         <button
@@ -827,7 +827,7 @@ export default function AttendanceManager() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 truncate">{event.title}</p>
                     <p className="text-sm text-gray-500">
-                      {new Date(event.event_date).toLocaleString()}
+                      {new Date(event.event_date).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Denver" })}
                       {event.location && ` · ${event.location}`}
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
