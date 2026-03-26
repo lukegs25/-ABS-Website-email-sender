@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession, isSuperAdmin } from "@/lib/auth-helpers";
 import { getSupabaseServerClient } from "@/lib/supabase";
 
-// GET — list all subscribers that have an adminType set
+// GET — list admins + LinkedIn members
 export async function GET() {
   const session = await getAdminSession();
   if (!session || !isSuperAdmin(session)) {
@@ -14,18 +14,32 @@ export async function GET() {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 
-  // Fetch all subscribers (admins have non-null adminType)
-  const { data: admins, error } = await supabase
+  // Fetch admins (subscribers with non-null adminType)
+  const { data: admins, error: adminErr } = await supabase
     .from("new_subscribers")
     .select("id, email, adminType, created_at")
     .not("adminType", "is", null)
     .order("email");
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (adminErr) {
+    return NextResponse.json({ error: adminErr.message }, { status: 500 });
   }
 
-  return NextResponse.json({ admins: admins || [] });
+  // Fetch LinkedIn members from profiles table
+  const { data: members, error: memberErr } = await supabase
+    .from("profiles")
+    .select("id, email, full_name, avatar_url, linkedin_url, created_at")
+    .not("email", "is", null)
+    .order("full_name");
+
+  if (memberErr) {
+    return NextResponse.json({ error: memberErr.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    admins: admins || [],
+    members: members || [],
+  });
 }
 
 // POST — set or update adminType for a subscriber by email
@@ -61,7 +75,7 @@ export async function POST(req) {
 
   if (!existing) {
     return NextResponse.json(
-      { error: `No subscriber found with email: ${email}` },
+      { error: `No subscriber found with email: ${email}. They must be on the subscriber list first.` },
       { status: 404 }
     );
   }
