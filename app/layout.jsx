@@ -2,6 +2,7 @@ import "./globals.css";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import Sidebar from "../components/Sidebar";
+import Footer from "../components/Footer";
 
 export const metadata = {
   title: "AI in Business Society — BYU",
@@ -21,8 +22,9 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="min-h-screen font-sans antialiased">
         <Sidebar />
-        <main className="min-h-screen bg-gray-50/50 pt-14 md:pt-0 sidebar-main">
-          {children}
+        <main className="flex min-h-screen flex-col bg-gray-50/50 pt-14 md:pt-0 sidebar-main">
+          <div className="flex-1">{children}</div>
+          <Footer />
         </main>
       </body>
     </html>

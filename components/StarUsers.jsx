@@ -67,13 +67,18 @@ export default function StarUsers() {
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-[color:var(--byu-blue)]">
-            Star Members
-          </h2>
-          <p className="mt-0.5 text-sm text-gray-500">
-            Recognized for AI tool proficiency and contributions to the club
-          </p>
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-yellow-50 text-yellow-600">
+            <Star size={20} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-[color:var(--byu-blue)]">
+              Star Members
+            </h2>
+            <p className="mt-0.5 text-sm text-gray-500">
+              Recognized for AI tool proficiency and contributions to the club
+            </p>
+          </div>
         </div>
         <Link
           href="/leaderboard"

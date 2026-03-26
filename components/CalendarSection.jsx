@@ -1,3 +1,4 @@
+import { Calendar } from "lucide-react";
 import UpcomingEvents from "./UpcomingEvents";
 
 const GOOGLE_CALENDAR_EMBED_URL =
@@ -6,13 +7,18 @@ const GOOGLE_CALENDAR_EMBED_URL =
 export default function CalendarSection() {
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="mb-4">
-        <h2 className="text-xl font-bold text-[color:var(--byu-blue)]">
-          Calendar
-        </h2>
-        <p className="mt-0.5 text-sm text-gray-500">
-          Upcoming meetings, workshops, and events
-        </p>
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[color:var(--byu-blue)]">
+          <Calendar size={20} />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-[color:var(--byu-blue)]">
+            Calendar
+          </h2>
+          <p className="mt-0.5 text-sm text-gray-500">
+            Upcoming meetings, workshops, and events
+          </p>
+        </div>
       </div>
 
       <div className="space-y-4">

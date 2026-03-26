@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Briefcase } from "lucide-react";
 
 function JobSkeleton() {
   return (
@@ -36,13 +36,18 @@ export default function JobBoard() {
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-[color:var(--byu-blue)]">
-            Job Board
-          </h2>
-          <p className="mt-0.5 text-sm text-gray-500">
-            AI and business opportunities curated for ABS members
-          </p>
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
+            <Briefcase size={20} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-[color:var(--byu-blue)]">
+              Job Board
+            </h2>
+            <p className="mt-0.5 text-sm text-gray-500">
+              AI and business opportunities curated for ABS members
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link

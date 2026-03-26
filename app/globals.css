@@ -9,7 +9,9 @@
 html,
 body {
   height: 100%;
-  background: #ffffff;
+  background: #f9fafb;
+  background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 body {
