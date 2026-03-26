@@ -55,7 +55,7 @@ function StatsRow() {
 
 export default function HomePage() {
   return (
-    <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-8 p-4 sm:p-6 md:p-8">
+    <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-8 p-4 sm:p-6 md:p-8 md:pl-12 lg:pl-16">
       {/* Chrome dripping hand - top right */}
       <div className="pointer-events-none absolute right-0 top-0 z-0 h-[70vh] w-1/2 min-w-[180px] opacity-50 sm:opacity-75 sm:min-w-[280px] md:min-w-[400px] xl:min-w-[480px]">
         <Image
@@ -63,7 +63,7 @@ export default function HomePage() {
           alt="Chrome dripping hand"
           fill
           priority
-          className="object-contain object-right scale-110 xl:scale-100 origin-top-right"
+          className="object-contain object-right scale-110 xl:scale-100 origin-top-right mix-blend-multiply"
           sizes="50vw"
         />
       </div>
