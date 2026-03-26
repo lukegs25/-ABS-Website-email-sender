@@ -12,6 +12,7 @@ import MarketingAgentTab from "@/components/MarketingAgentTab";
 import AttendanceManager from "@/components/AttendanceManager";
 import StarTierManager from "@/components/StarTierManager";
 import SiteContentEditor from "@/components/SiteContentEditor";
+import AdminManager from "@/components/AdminManager";
 
 function AdminDashboard() {
   const adminSession = useAdmin();
@@ -50,7 +51,8 @@ function AdminDashboard() {
     { id: "marketing", label: "Marketing Agent" },
     { id: "center", label: "AI Center" },
     { id: "site-editor", label: "Site Editor" },
-    { id: "audiences", label: "Audiences", superAdminOnly: true }
+    { id: "audiences", label: "Audiences", superAdminOnly: true },
+    { id: "accounts", label: "Accounts", superAdminOnly: true }
   ];
 
   const tabs = allTabs.filter(tab => {
@@ -194,6 +196,12 @@ function AdminDashboard() {
               {activeTab === "site-editor" && (
                 <div className="p-6">
                   <SiteContentEditor />
+                </div>
+              )}
+
+              {activeTab === "accounts" && (
+                <div className="p-6">
+                  <AdminManager />
                 </div>
               )}
             </div>
