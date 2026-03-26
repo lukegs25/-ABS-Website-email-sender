@@ -73,15 +73,33 @@ export async function POST(req) {
     return NextResponse.json({ error: lookupError.message }, { status: 500 });
   }
 
+  const newAdminType = adminType || null;
+
   if (!existing) {
-    return NextResponse.json(
-      { error: `No subscriber found with email: ${email}. They must be on the subscriber list first.` },
-      { status: 404 }
-    );
+    // Auto-create a subscriber record for LinkedIn members not yet on the list
+    if (!newAdminType) {
+      return NextResponse.json(
+        { error: `No subscriber found with email: ${email}` },
+        { status: 404 }
+      );
+    }
+    const { error: insertError } = await supabase
+      .from("new_subscribers")
+      .insert({ email, adminType: newAdminType, audience_id: 8 });
+
+    if (insertError) {
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      email,
+      adminType: newAdminType,
+      action: "created",
+    });
   }
 
   // Update adminType (empty string = remove admin access)
-  const newAdminType = adminType || null;
   const { error: updateError } = await supabase
     .from("new_subscribers")
     .update({ adminType: newAdminType })
