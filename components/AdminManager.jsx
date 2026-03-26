@@ -105,10 +105,11 @@ export default function AdminManager() {
 
   function getRoleLabel(adminType) {
     if (!adminType) return "None";
-    const lower = adminType.toLowerCase();
-    if (lower === "superadmin") return "Super Admin";
-    const match = ROLE_OPTIONS.find((r) => r.value === adminType);
-    return match ? match.label : adminType;
+    // adminType can be string, array, or number from DB
+    const str = Array.isArray(adminType) ? adminType.join(",") : String(adminType);
+    if (str.toLowerCase() === "superadmin") return "Super Admin";
+    const match = ROLE_OPTIONS.find((r) => r.value === str);
+    return match ? match.label : str;
   }
 
   return (
@@ -247,7 +248,7 @@ export default function AdminManager() {
                     ) : (
                       <span
                         className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          admin.adminType?.toLowerCase() === "superadmin"
+                          String(admin.adminType || "").toLowerCase() === "superadmin"
                             ? "bg-blue-100 text-blue-800"
                             : "bg-gray-100 text-gray-700"
                         }`}
