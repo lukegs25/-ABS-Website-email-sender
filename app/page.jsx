@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Instagram, Linkedin, Globe } from "lucide-react";
+import { Instagram, Linkedin, Globe, CalendarCheck } from "lucide-react";
 import { motion } from "motion/react";
 import CalendarSection from "@/components/CalendarSection";
 import JobBoard from "@/components/JobBoard";
@@ -49,7 +49,7 @@ export default function HomePage() {
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-[color:var(--byu-blue)] px-8 py-3 font-bold uppercase tracking-wide text-white shadow-lg transition-opacity hover:opacity-90"
           >
             <Globe size={18} />
-            Join the Club
+            Join the Club/Email List
           </a>
           <a
             href="https://www.instagram.com/abs.byu/"
@@ -69,6 +69,13 @@ export default function HomePage() {
             <Linkedin size={16} />
             LinkedIn
           </a>
+          <Link
+            href="/checkin"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[color:var(--byu-blue)] shadow-sm transition-colors hover:bg-[color:var(--byu-blue)] hover:text-white"
+          >
+            <CalendarCheck size={16} />
+            Check-in at Event
+          </Link>
         </div>
       </motion.section>
 

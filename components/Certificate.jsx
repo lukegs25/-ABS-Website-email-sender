@@ -82,7 +82,7 @@ export default function Certificate({ memberName, eventsAttended, completionDate
         385
       );
       ctx.fillText(
-        `${eventsAttended || 5} AI in Business Society meetings at Brigham Young University,`,
+        `${eventsAttended || 4} AI in Business Society meetings at Brigham Young University,`,
         W / 2,
         415
       );

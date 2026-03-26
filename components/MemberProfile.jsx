@@ -5,7 +5,7 @@ import { Award, Crown } from "lucide-react";
 import Link from "next/link";
 import Certificate from "@/components/Certificate";
 
-const REQUIRED_EVENTS = 5;
+const REQUIRED_EVENTS = 4;
 
 export default function MemberProfile({ user, profile, stars = [], totalStars = null, currentTier = null, eventsAttended: eventsAttendedProp }) {
   const displayName =

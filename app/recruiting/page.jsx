@@ -39,7 +39,7 @@ export default async function RecruitingPage() {
     eventsAttended = count || 0;
   }
 
-  const isUnlocked = eventsAttended >= 5;
+  const isUnlocked = eventsAttended >= 4;
 
   return (
     <div className="mx-auto max-w-3xl p-4 sm:p-6 md:p-8">
@@ -66,23 +66,23 @@ export default async function RecruitingPage() {
             Unlock Premier Recruiting
           </h2>
           <p className="mt-2 text-gray-600">
-            Attend 5 ABS meetings to earn your AI Proficiency Certificate and gain access to exclusive AI job opportunities.
+            Attend 4 ABS meetings to earn your AI Proficiency Certificate and gain access to exclusive AI job opportunities.
           </p>
 
           {/* Progress */}
           <div className="mx-auto mt-6 max-w-xs">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-sm text-gray-500">
-                {eventsAttended} of 5 meetings
+                {eventsAttended} of 4 meetings
               </span>
               <span className="text-sm font-medium text-[color:var(--byu-blue)]">
-                {5 - eventsAttended} more to go
+                {4 - eventsAttended} more to go
               </span>
             </div>
             <div className="h-3 w-full rounded-full bg-gray-100">
               <div
                 className="h-3 rounded-full bg-[color:var(--byu-blue)] transition-all"
-                style={{ width: `${(eventsAttended / 5) * 100}%` }}
+                style={{ width: `${(eventsAttended / 4) * 100}%` }}
               />
             </div>
           </div>
