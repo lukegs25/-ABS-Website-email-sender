@@ -30,7 +30,7 @@ function StatsRow() {
   }, []);
 
   const items = [
-    { icon: Users, label: "Active Members", value: stats.members },
+    { icon: Users, label: "On the Leaderboard", value: stats.members },
     { icon: Calendar, label: "Upcoming Events", value: stats.events },
     { icon: Briefcase, label: "Open Positions", value: stats.jobs },
   ];
