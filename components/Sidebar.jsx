@@ -6,7 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   Home,
-  Mail,
   Briefcase,
   Calendar,
   LogIn,
@@ -24,7 +23,6 @@ import { createClient } from "@/utils/supabase/client";
 
 const primaryNavLinks = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/join", label: "Join Email", icon: Mail },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
   { href: "/#calendar", label: "Events", icon: Calendar },
 ];
