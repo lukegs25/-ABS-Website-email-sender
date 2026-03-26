@@ -63,7 +63,7 @@ export default function HomePage() {
           alt="Chrome dripping hand"
           fill
           priority
-          className="object-contain object-right scale-110 xl:scale-100 origin-top-right mix-blend-multiply"
+          className="object-contain object-right scale-110 xl:scale-100 origin-top-right"
           sizes="50vw"
         />
       </div>
