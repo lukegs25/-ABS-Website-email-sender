@@ -19,18 +19,14 @@ export default function AdminManager() {
   const [saving, setSaving] = useState(null);
   const [message, setMessage] = useState(null);
   const [memberSearch, setMemberSearch] = useState("");
-
-  // New admin form
-  const [newEmail, setNewEmail] = useState("");
-  const [newRole, setNewRole] = useState("8");
-  const [adding, setAdding] = useState(false);
+  const [needsColumn, setNeedsColumn] = useState(false);
 
   // Editing state
-  const [editingEmail, setEditingEmail] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState("");
 
   // Grant role from member list
-  const [grantingEmail, setGrantingEmail] = useState(null);
+  const [grantingId, setGrantingId] = useState(null);
   const [grantRole, setGrantRole] = useState("8");
 
   useEffect(() => {
@@ -44,6 +40,7 @@ export default function AdminManager() {
       const data = await res.json();
       setAdmins(data.admins || []);
       setMembers(data.members || []);
+      if (data.needsColumn) setNeedsColumn(true);
     } catch {
       setMessage({ type: "error", text: "Failed to load accounts" });
     } finally {
@@ -51,43 +48,15 @@ export default function AdminManager() {
     }
   }
 
-  async function addAdmin(e) {
-    e.preventDefault();
-    if (!newEmail.trim()) return;
-    setAdding(true);
+  async function updateAdmin(profileId, adminType) {
+    setSaving(profileId);
     setMessage(null);
 
     try {
       const res = await fetch("/api/admin/accounts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: newEmail.trim(), adminType: newRole }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setMessage({ type: "error", text: data.error });
-      } else {
-        setMessage({ type: "success", text: `Admin access granted to ${newEmail}` });
-        setNewEmail("");
-        fetchData();
-      }
-    } catch {
-      setMessage({ type: "error", text: "Failed to add admin" });
-    } finally {
-      setAdding(false);
-    }
-  }
-
-  async function updateAdmin(email, adminType) {
-    setSaving(email);
-    setMessage(null);
-
-    try {
-      const res = await fetch("/api/admin/accounts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, adminType }),
+        body: JSON.stringify({ profileId, adminType }),
       });
       const data = await res.json();
 
@@ -97,11 +66,11 @@ export default function AdminManager() {
         setMessage({
           type: "success",
           text: adminType
-            ? `Updated ${email} to ${adminType}`
-            : `Removed admin access for ${email}`,
+            ? `Granted ${getRoleLabel(adminType)} access`
+            : `Removed admin access`,
         });
-        setEditingEmail(null);
-        setGrantingEmail(null);
+        setEditingId(null);
+        setGrantingId(null);
         fetchData();
       }
     } catch {
@@ -119,8 +88,8 @@ export default function AdminManager() {
     return match ? match.label : str;
   }
 
-  // Build a set of admin emails for quick lookup
-  const adminEmails = new Set(admins.map((a) => a.email?.toLowerCase()));
+  // Build a set of admin profile IDs for quick lookup
+  const adminIds = new Set(admins.map((a) => a.id));
 
   // Filter members by search
   const filteredMembers = members.filter((m) => {
@@ -139,9 +108,19 @@ export default function AdminManager() {
           Admin Accounts
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          Manage admin roles. Grant access to LinkedIn members or add by email.
+          Grant admin access to LinkedIn members. Admin access is tied to their LinkedIn profile.
         </p>
       </div>
+
+      {/* Column warning */}
+      {needsColumn && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <strong>Setup required:</strong> Add the admin_type column to your profiles table in Supabase:
+          <code className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs">
+            ALTER TABLE profiles ADD COLUMN admin_type text;
+          </code>
+        </div>
+      )}
 
       {/* Message */}
       {message && (
@@ -168,131 +147,98 @@ export default function AdminManager() {
         ) : admins.length === 0 ? (
           <div className="rounded-lg border-2 border-dashed border-gray-200 py-8 text-center">
             <p className="font-medium text-gray-600">No admin accounts found</p>
+            <p className="mt-1 text-sm text-gray-500">
+              Grant access to LinkedIn members below.
+            </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-200">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 font-medium text-gray-700">Email</th>
-                  <th className="px-4 py-3 font-medium text-gray-700">Role</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {admins.map((admin) => (
-                  <tr key={admin.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{admin.email}</td>
-                    <td className="px-4 py-3">
-                      {editingEmail === admin.email ? (
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            className="rounded-lg border border-gray-300 px-2 py-1 text-sm"
-                          >
-                            {ROLE_OPTIONS.map((r) => (
-                              <option key={r.value} value={r.value}>{r.label}</option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => updateAdmin(admin.email, editValue)}
-                            disabled={saving === admin.email}
-                            className="rounded-md bg-[color:var(--byu-blue)] px-3 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
-                          >
-                            {saving === admin.email ? "..." : "Save"}
-                          </button>
-                          <button
-                            onClick={() => setEditingEmail(null)}
-                            className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            String(admin.adminType || "").toLowerCase() === "superadmin"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {getRoleLabel(admin.adminType)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {editingEmail !== admin.email && (
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              setEditingEmail(admin.email);
-                              setEditValue(String(admin.adminType || "8"));
-                            }}
-                            className="rounded-md px-3 py-1 text-xs font-medium text-[color:var(--byu-blue)] hover:bg-[color:var(--byu-blue)]/10"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (confirm(`Remove admin access for ${admin.email}?`)) {
-                                updateAdmin(admin.email, "");
-                              }
-                            }}
-                            disabled={saving === admin.email}
-                            className="rounded-md px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-2">
+            {admins.map((admin) => (
+              <div
+                key={admin.id}
+                className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50"
+              >
+                {admin.avatar_url ? (
+                  <img
+                    src={admin.avatar_url}
+                    alt=""
+                    className="h-10 w-10 shrink-0 rounded-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--byu-blue)]/10 text-sm font-semibold text-[color:var(--byu-blue)]">
+                    {(admin.full_name || "?")[0]}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-gray-900 truncate block">
+                    {admin.full_name || "Unknown"}
+                  </span>
+                  <span className="text-sm text-gray-500 truncate block">{admin.email}</span>
+                </div>
+
+                {editingId === admin.id ? (
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="rounded-lg border border-gray-300 px-2 py-1 text-sm"
+                    >
+                      {ROLE_OPTIONS.map((r) => (
+                        <option key={r.value} value={r.value}>{r.label}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => updateAdmin(admin.id, editValue)}
+                      disabled={saving === admin.id}
+                      className="rounded-md bg-[color:var(--byu-blue)] px-3 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
+                    >
+                      {saving === admin.id ? "..." : "Save"}
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        String(admin.admin_type || "").toLowerCase() === "superadmin"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {getRoleLabel(admin.admin_type)}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setEditingId(admin.id);
+                        setEditValue(String(admin.admin_type || "8"));
+                      }}
+                      className="rounded-md px-3 py-1 text-xs font-medium text-[color:var(--byu-blue)] hover:bg-[color:var(--byu-blue)]/10"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Remove admin access for ${admin.full_name || admin.email}?`)) {
+                          updateAdmin(admin.id, "");
+                        }
+                      }}
+                      disabled={saving === admin.id}
+                      className="rounded-md px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
-      </div>
-
-      {/* Add by email */}
-      <div className="mb-8">
-        <h3 className="mb-3 text-lg font-semibold text-gray-900">Add Admin by Email</h3>
-        <form
-          onSubmit={addAdmin}
-          className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 sm:flex-row sm:items-end"
-        >
-          <div className="flex-1">
-            <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="user@example.com"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[color:var(--byu-blue)] focus:outline-none focus:ring-1 focus:ring-[color:var(--byu-blue)]"
-              required
-            />
-          </div>
-          <div className="sm:w-48">
-            <label className="mb-1 block text-sm font-medium text-gray-700">Role</label>
-            <select
-              value={newRole}
-              onChange={(e) => setNewRole(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[color:var(--byu-blue)] focus:outline-none focus:ring-1 focus:ring-[color:var(--byu-blue)]"
-            >
-              {ROLE_OPTIONS.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
-          <button
-            type="submit"
-            disabled={adding}
-            className="shrink-0 rounded-lg bg-[color:var(--byu-blue)] px-5 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-          >
-            {adding ? "Adding..." : "Grant Access"}
-          </button>
-        </form>
       </div>
 
       {/* LinkedIn Members */}
@@ -334,8 +280,8 @@ export default function AdminManager() {
         ) : (
           <ul className="space-y-2">
             {filteredMembers.map((member) => {
-              const isAdmin = adminEmails.has(member.email?.toLowerCase());
-              const isGranting = grantingEmail === member.email;
+              const isAdmin = adminIds.has(member.id);
+              const isGranting = grantingId === member.id;
 
               return (
                 <li
@@ -361,7 +307,7 @@ export default function AdminManager() {
                       </span>
                       {isAdmin && (
                         <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                          Admin
+                          {getRoleLabel(member.admin_type)}
                         </span>
                       )}
                     </div>
@@ -380,14 +326,14 @@ export default function AdminManager() {
                         ))}
                       </select>
                       <button
-                        onClick={() => updateAdmin(member.email, grantRole)}
-                        disabled={saving === member.email}
+                        onClick={() => updateAdmin(member.id, grantRole)}
+                        disabled={saving === member.id}
                         className="rounded-md bg-[color:var(--byu-blue)] px-3 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
                       >
-                        {saving === member.email ? "..." : "Confirm"}
+                        {saving === member.id ? "..." : "Confirm"}
                       </button>
                       <button
-                        onClick={() => setGrantingEmail(null)}
+                        onClick={() => setGrantingId(null)}
                         className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
                       >
                         Cancel
@@ -396,8 +342,8 @@ export default function AdminManager() {
                   ) : (
                     <button
                       onClick={() => {
-                        setGrantingEmail(member.email);
-                        setGrantRole("8");
+                        setGrantingId(member.id);
+                        setGrantRole(isAdmin ? String(member.admin_type || "8") : "8");
                       }}
                       className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                         isAdmin

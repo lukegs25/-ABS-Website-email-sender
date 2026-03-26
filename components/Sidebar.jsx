@@ -18,6 +18,7 @@ import {
   PanelLeftOpen,
   User,
   LogOut,
+  Shield,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -41,6 +42,7 @@ export default function Sidebar() {
   const [pinned, setPinned] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const sidebarRef = useRef(null);
   const pathname = usePathname();
   const router = useRouter();
@@ -49,9 +51,31 @@ export default function Sidebar() {
   useEffect(() => {
     const supabase = createClient();
     if (!supabase) return;
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user || null));
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user || null);
+      if (user) {
+        // Check admin status from profile
+        fetch("/api/auth/user")
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.user?.admin_type) setIsAdmin(true);
+          })
+          .catch(() => {});
+      }
+    });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
+      if (session?.user) {
+        fetch("/api/auth/user")
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.user?.admin_type) setIsAdmin(true);
+            else setIsAdmin(false);
+          })
+          .catch(() => {});
+      } else {
+        setIsAdmin(false);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -198,6 +222,19 @@ export default function Sidebar() {
                   </Link>
                 );
               })}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    pathname === "/admin"
+                      ? "bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <Shield size={16} className={pathname === "/admin" ? "text-[color:var(--byu-blue)]" : "text-gray-400"} />
+                  Admin
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={handleSignOut}
@@ -313,6 +350,19 @@ export default function Sidebar() {
                   </Link>
                 );
               })}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                    pathname === "/admin"
+                      ? "bg-[color:var(--byu-blue)]/10 text-[color:var(--byu-blue)]"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <Shield size={14} className={pathname === "/admin" ? "text-[color:var(--byu-blue)]" : "text-gray-400"} />
+                  Admin
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={handleSignOut}

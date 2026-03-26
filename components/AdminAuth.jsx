@@ -9,6 +9,26 @@ export function useAdmin() {
   return useContext(AdminContext);
 }
 
+function parseAdminTypes(adminType) {
+  if (!adminType) return [];
+  let adminTypes = [];
+  if (Array.isArray(adminType)) {
+    adminTypes = adminType;
+  } else if (typeof adminType === "string") {
+    try {
+      const parsed = JSON.parse(adminType);
+      if (Array.isArray(parsed)) {
+        adminTypes = parsed;
+      } else {
+        adminTypes = adminType.split(",").map((t) => t.trim());
+      }
+    } catch {
+      adminTypes = adminType.split(",").map((t) => t.trim());
+    }
+  }
+  return adminTypes.filter(Boolean);
+}
+
 export default function AdminAuth({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminSession, setAdminSession] = useState(null);
@@ -16,101 +36,97 @@ export default function AdminAuth({ children }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/admin-login', { method: 'GET' });
-        if (!res.ok) {
-          setIsAuthenticated(false);
-          setAdminSession(null);
+    checkAuth();
+  }, []);
+
+  async function checkAuth() {
+    setChecking(true);
+    try {
+      // First, check if user is logged in via LinkedIn and has admin_type on their profile
+      const linkedInRes = await fetch("/api/auth/user");
+      if (linkedInRes.ok) {
+        const linkedInData = await linkedInRes.json();
+        if (linkedInData.user?.admin_type) {
+          const adminTypes = parseAdminTypes(linkedInData.user.admin_type);
+          setAdminSession({
+            email: linkedInData.user.email,
+            admin_type: linkedInData.user.admin_type,
+            adminTypes,
+            isSuperAdmin: adminTypes.some((t) => t.toLowerCase() === "superadmin"),
+            authMethod: "linkedin",
+          });
+          setIsAuthenticated(true);
+          setChecking(false);
           return;
         }
+      }
+
+      // Fallback: check cookie-based admin session (email/password login)
+      const res = await fetch("/api/admin-login", { method: "GET" });
+      if (res.ok) {
         const data = await res.json();
-        let adminTypes = [];
-        if (Array.isArray(data.admin_type)) {
-          adminTypes = data.admin_type;
-        } else if (typeof data.admin_type === 'string') {
-          // Try to parse as JSON array first
-          try {
-            const parsed = JSON.parse(data.admin_type);
-            if (Array.isArray(parsed)) {
-              adminTypes = parsed;
-            } else {
-              // Split by comma if it's a comma-separated string
-              adminTypes = data.admin_type.split(',').map(type => type.trim());
-            }
-          } catch {
-            // Split by comma if it's a comma-separated string
-            adminTypes = data.admin_type.split(',').map(type => type.trim());
-          }
-        }
+        const adminTypes = parseAdminTypes(data.admin_type);
         setAdminSession({
           email: data.email,
           admin_type: data.admin_type,
-          adminTypes: adminTypes,
-          isSuperAdmin: adminTypes.includes('SuperAdmin')
+          adminTypes,
+          isSuperAdmin: adminTypes.some((t) => t.toLowerCase() === "superadmin"),
+          authMethod: "password",
         });
         setIsAuthenticated(true);
-      } catch (e) {
-        console.log("Error in checkAuth:", e);
+      } else {
         setIsAuthenticated(false);
         setAdminSession(null);
       }
-    };
-    
-    checkAuth();
-  }, []);
+    } catch (e) {
+      console.log("Error in checkAuth:", e);
+      setIsAuthenticated(false);
+      setAdminSession(null);
+    } finally {
+      setChecking(false);
+    }
+  }
 
   const handleAuth = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      const res = await fetch('/api/admin-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password })
+      const res = await fetch("/api/admin-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Login failed');
+        setError(data.error || "Login failed");
         return;
       }
-      
-      // Handle admin_type as array or string
-      let adminTypes = [];
-      if (Array.isArray(data.admin_type)) {
-        adminTypes = data.admin_type;
-      } else if (typeof data.admin_type === 'string') {
-        // Try to parse as JSON array first
-        try {
-          const parsed = JSON.parse(data.admin_type);
-          if (Array.isArray(parsed)) {
-            adminTypes = parsed;
-          } else {
-            // Split by comma if it's a comma-separated string
-            adminTypes = data.admin_type.split(',').map(type => type.trim());
-          }
-        } catch {
-          // Split by comma if it's a comma-separated string
-          adminTypes = data.admin_type.split(',').map(type => type.trim());
-        }
-      }
-      
-      console.log("Admin types from login:", adminTypes);
-      
-      // Set admin session from response
+
+      const adminTypes = parseAdminTypes(data.admin_type);
       setAdminSession({
         email: email.trim().toLowerCase(),
         admin_type: data.admin_type,
-        adminTypes: adminTypes,
-        isSuperAdmin: adminTypes.includes('SuperAdmin')
+        adminTypes,
+        isSuperAdmin: adminTypes.some((t) => t.toLowerCase() === "superadmin"),
+        authMethod: "password",
       });
       setIsAuthenticated(true);
     } catch (err) {
-      setError('Unexpected error');
+      setError("Unexpected error");
     }
   };
+
+  // Show loading while checking auth
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[color:var(--byu-blue)]" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -120,6 +136,9 @@ export default function AdminAuth({ children }) {
             <h2 className="mt-6 text-center text-3xl font-bold text-[color:var(--byu-blue)]">
               Admin Access Required
             </h2>
+            <p className="mt-2 text-center text-sm text-gray-500">
+              Sign in with your LinkedIn account if you have admin access, or use admin credentials below.
+            </p>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleAuth}>
             <div>

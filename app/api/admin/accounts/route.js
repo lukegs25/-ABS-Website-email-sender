@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession, isSuperAdmin } from "@/lib/auth-helpers";
 import { getSupabaseServerClient } from "@/lib/supabase";
 
-// GET — list admins + LinkedIn members
+// GET — list LinkedIn members with their admin status
 export async function GET() {
   const session = await getAdminSession();
   if (!session || !isSuperAdmin(session)) {
@@ -14,35 +14,39 @@ export async function GET() {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 
-  // Fetch admins (subscribers with non-null adminType)
-  const { data: admins, error: adminErr } = await supabase
-    .from("new_subscribers")
-    .select("id, email, adminType, created_at")
-    .not("adminType", "is", null)
-    .order("email");
-
-  if (adminErr) {
-    return NextResponse.json({ error: adminErr.message }, { status: 500 });
-  }
-
-  // Fetch LinkedIn members from profiles table
+  // Fetch all LinkedIn profiles (admin_type may or may not exist yet)
   const { data: members, error: memberErr } = await supabase
     .from("profiles")
-    .select("id, email, full_name, avatar_url, linkedin_url, created_at")
+    .select("id, email, full_name, avatar_url, linkedin_url, admin_type, created_at")
     .not("email", "is", null)
     .order("full_name");
 
   if (memberErr) {
+    // If admin_type column doesn't exist, retry without it
+    if (memberErr.message?.includes("admin_type")) {
+      const { data: fallback } = await supabase
+        .from("profiles")
+        .select("id, email, full_name, avatar_url, linkedin_url, created_at")
+        .not("email", "is", null)
+        .order("full_name");
+      return NextResponse.json({
+        members: (fallback || []).map((m) => ({ ...m, admin_type: null })),
+        needsColumn: true,
+      });
+    }
     return NextResponse.json({ error: memberErr.message }, { status: 500 });
   }
 
+  // Split into admins and all members
+  const admins = (members || []).filter((m) => m.admin_type);
+
   return NextResponse.json({
-    admins: admins || [],
+    admins,
     members: members || [],
   });
 }
 
-// POST — set or update adminType for a subscriber by email
+// POST — set or update admin_type on a LinkedIn profile
 export async function POST(req) {
   const session = await getAdminSession();
   if (!session || !isSuperAdmin(session)) {
@@ -55,63 +59,56 @@ export async function POST(req) {
   }
 
   const body = await req.json();
+  const profileId = body.profileId;
   const email = (body.email || "").trim().toLowerCase();
   const adminType = (body.adminType || "").trim();
 
-  if (!email) {
-    return NextResponse.json({ error: "Email is required" }, { status: 400 });
+  if (!profileId && !email) {
+    return NextResponse.json({ error: "Profile ID or email is required" }, { status: 400 });
   }
 
-  // Check if subscriber exists
-  const { data: existing, error: lookupError } = await supabase
-    .from("new_subscribers")
-    .select("id, email, adminType")
-    .eq("email", email)
-    .maybeSingle();
+  // Find the profile
+  let query = supabase.from("profiles").select("id, email, admin_type");
+  if (profileId) {
+    query = query.eq("id", profileId);
+  } else {
+    query = query.eq("email", email);
+  }
+  const { data: profile, error: lookupError } = await query.maybeSingle();
 
   if (lookupError) {
     return NextResponse.json({ error: lookupError.message }, { status: 500 });
   }
 
-  const newAdminType = adminType || null;
-
-  if (!existing) {
-    // Auto-create a subscriber record for LinkedIn members not yet on the list
-    if (!newAdminType) {
-      return NextResponse.json(
-        { error: `No subscriber found with email: ${email}` },
-        { status: 404 }
-      );
-    }
-    const { error: insertError } = await supabase
-      .from("new_subscribers")
-      .insert({ email, adminType: newAdminType, audience_id: 8 });
-
-    if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
-    }
-
-    return NextResponse.json({
-      ok: true,
-      email,
-      adminType: newAdminType,
-      action: "created",
-    });
+  if (!profile) {
+    return NextResponse.json(
+      { error: "No LinkedIn profile found. They must log in with LinkedIn first." },
+      { status: 404 }
+    );
   }
 
-  // Update adminType (empty string = remove admin access)
+  // Update admin_type (empty string = remove admin access)
+  const newAdminType = adminType || null;
   const { error: updateError } = await supabase
-    .from("new_subscribers")
-    .update({ adminType: newAdminType })
-    .eq("id", existing.id);
+    .from("profiles")
+    .update({ admin_type: newAdminType })
+    .eq("id", profile.id);
 
   if (updateError) {
+    // If admin_type column doesn't exist, return helpful error
+    if (updateError.message?.includes("admin_type")) {
+      return NextResponse.json(
+        { error: "The admin_type column needs to be added to the profiles table. Run: ALTER TABLE profiles ADD COLUMN admin_type text;" },
+        { status: 500 }
+      );
+    }
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
   return NextResponse.json({
     ok: true,
-    email,
+    profileId: profile.id,
+    email: profile.email,
     adminType: newAdminType,
     action: newAdminType ? "updated" : "removed",
   });
