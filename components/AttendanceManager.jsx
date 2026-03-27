@@ -717,9 +717,13 @@ export default function AttendanceManager() {
                       {isActive && linkedEvent ? (
                         <>
                           <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(activePassword.password);
-                              setMessage({ type: "success", text: `Passcode "${activePassword.password}" copied!` });
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(activePassword.password);
+                                setMessage({ type: "success", text: `Passcode "${activePassword.password}" copied!` });
+                              } catch {
+                                setMessage({ type: "success", text: `Passcode: ${activePassword.password}` });
+                              }
                             }}
                             className="rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100"
                           >
@@ -865,9 +869,13 @@ export default function AttendanceManager() {
                   <div className="flex shrink-0 gap-2">
                     {isActive ? (
                       <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(ap.password);
-                          setMessage({ type: "success", text: `Passcode "${ap.password}" copied!` });
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(ap.password);
+                            setMessage({ type: "success", text: `Passcode "${ap.password}" copied!` });
+                          } catch {
+                            setMessage({ type: "success", text: `Passcode: ${ap.password}` });
+                          }
                         }}
                         className="rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100"
                       >
