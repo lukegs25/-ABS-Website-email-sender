@@ -224,16 +224,6 @@ export default function StudentForm() {
           Don't forget to join our Google Calendar
         </a>
       </div>
-      <div className="text-sm sm:text-base">
-        <a
-          href="https://join.slack.com/t/byuabsleadership/shared_invite/zt-3rvopax86-qQILQC6bJ2XBWWfc84D34A"
-          target="_blank"
-          rel="noreferrer"
-          className="text-[color:var(--byu-blue)] underline"
-        >
-          Join the club Slack!
-        </a>
-      </div>
     </form>
   );
 }
