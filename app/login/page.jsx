@@ -17,14 +17,6 @@ export default function LoginPage() {
         <div className="flex flex-col gap-3">
           <LinkedInSignIn redirectTo="/member" />
           <GitHubSignIn redirectTo="/member" />
-          <a
-            href="https://join.slack.com/t/byuabsleadership/shared_invite/zt-3rvopax86-qQILQC6bJ2XBWWfc84D34A"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Join our club Slack
-          </a>
         </div>
       </div>
     </div>

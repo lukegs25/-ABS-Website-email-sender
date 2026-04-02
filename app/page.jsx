@@ -132,6 +132,16 @@ export default function HomePage() {
               <Linkedin size={16} />
               <span className="hidden sm:inline">LinkedIn</span>
             </a>
+            <a
+              href="https://join.slack.com/t/byuabsleadership/shared_invite/zt-3rvopax86-qQILQC6bJ2XBWWfc84D34A"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-[color:var(--byu-blue)]"
+              aria-label="Slack"
+            >
+              <span className="hidden sm:inline">Join our club Slack</span>
+              <span className="sm:hidden">Slack</span>
+            </a>
           </div>
         </div>
       </motion.section>
