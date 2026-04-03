@@ -126,7 +126,7 @@ export async function POST(req) {
       eventTitle: event.title,
       starsAwarded,
       totalEventsAttended: totalAttended || 0,
-      certificateEarned: (totalAttended || 0) >= 5,
+      certificateEarned: (totalAttended || 0) >= 3,
     });
   } catch (e) {
     console.error("[POST /api/checkin]", e);

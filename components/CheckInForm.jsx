@@ -129,20 +129,20 @@ export default function CheckInForm() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs text-gray-500">
-                    {result.totalEventsAttended} of 4 meetings
+                    {result.totalEventsAttended} of 3 meetings
                   </span>
                   <span className="text-xs font-medium text-[color:var(--byu-blue)]">
-                    {4 - result.totalEventsAttended} more to go
+                    {3 - result.totalEventsAttended} more to go
                   </span>
                 </div>
                 <div className="h-2.5 w-full rounded-full bg-gray-100">
                   <div
                     className="h-2.5 rounded-full bg-[color:var(--byu-blue)] transition-all"
-                    style={{ width: `${Math.min((result.totalEventsAttended / 4) * 100, 100)}%` }}
+                    style={{ width: `${Math.min((result.totalEventsAttended / 3) * 100, 100)}%` }}
                   />
                 </div>
                 <p className="mt-2 text-xs text-gray-500">
-                  Attend 4 meetings to earn your AI Proficiency Certificate and unlock premier recruiting.
+                  Attend 3 meetings to earn your AI Proficiency Certificate and unlock premier recruiting.
                 </p>
               </div>
             )}

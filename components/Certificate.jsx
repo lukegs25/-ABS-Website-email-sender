@@ -1,96 +1,286 @@
 "use client";
 
-import { useRef, useCallback } from "react";
-import { Download } from "lucide-react";
+import { useRef, useCallback, useState, useEffect } from "react";
+import { Download, Type } from "lucide-react";
 
 const BYU_BLUE = "#002e5d";
 const GOLD = "#c5a44e";
+const BG_WHITE = "#ffffff";
+
+// Google Fonts loaded for canvas use
+const SERIF = "'Cormorant Garamond', Georgia, serif";
+const SCRIPT = "'Dancing Script', cursive";
+const SANS = "'Geist Sans', 'Helvetica Neue', system-ui, sans-serif";
+
+// Preload Google Fonts so canvas can use them
+function loadGoogleFonts() {
+  if (typeof document === "undefined") return Promise.resolve();
+  const id = "cert-google-fonts";
+  if (!document.getElementById(id)) {
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Dancing+Script:wght@400;500;600;700&display=swap";
+    document.head.appendChild(link);
+  }
+  // Wait for fonts to be ready
+  return document.fonts.ready;
+}
+
+function drawCornerOrnament(ctx, x, y, size, rotation) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.strokeStyle = GOLD;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(size, 0);
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, size);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(size * 0.3, size * 0.3, size * 0.15, 0, Math.PI * 1.5, true);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(size * 0.15, size * 0.15, size * 0.06, 0, Math.PI * 2);
+  ctx.fillStyle = GOLD;
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawDiamond(ctx, cx, cy, r) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r);
+  ctx.lineTo(cx + r, cy);
+  ctx.lineTo(cx, cy + r);
+  ctx.lineTo(cx - r, cy);
+  ctx.closePath();
+  ctx.fill();
+}
 
 export default function Certificate({ memberName, eventsAttended, completionDate }) {
   const canvasRef = useRef(null);
+  const [signatureText, setSignatureText] = useState("");
+  const [advisorSigImg, setAdvisorSigImg] = useState(null);
+  const [logoImg, setLogoImg] = useState(null);
+  const [fontsReady, setFontsReady] = useState(false);
+
+  // Load fonts, logo, and advisor signature
+  useEffect(() => {
+    loadGoogleFonts().then(() => setFontsReady(true));
+
+    const logo = new Image();
+    logo.onload = () => setLogoImg(logo);
+    logo.src = "/logo.png";
+
+    const sig = new Image();
+    sig.onload = () => setAdvisorSigImg(sig);
+    sig.src = "/gaskin-signature.jpg";
+  }, []);
 
   const drawCertificate = useCallback(
     (canvas) => {
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
+      const scale = 3; // 3x resolution for high-def output
       const W = 1200;
       const H = 850;
-      canvas.width = W;
-      canvas.height = H;
+      canvas.width = W * scale;
+      canvas.height = H * scale;
+      ctx.scale(scale, scale);
 
-      // Background
-      ctx.fillStyle = "#ffffff";
+      // Cream background
+      ctx.fillStyle = BG_WHITE;
       ctx.fillRect(0, 0, W, H);
 
-      // Border
-      ctx.strokeStyle = BYU_BLUE;
-      ctx.lineWidth = 4;
-      ctx.strokeRect(30, 30, W - 60, H - 60);
+      // Use typed signature as the display name if provided
+      const displayName = signatureText || memberName || "Member Name";
 
-      // Inner border
-      ctx.strokeStyle = GOLD;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(40, 40, W - 80, H - 80);
-
-      // Top accent bar
+      // Subtle watermark background
+      ctx.save();
+      ctx.globalAlpha = 0.02;
       ctx.fillStyle = BYU_BLUE;
-      ctx.fillRect(60, 60, W - 120, 8);
-
-      // "AI in Business Society" header
-      ctx.fillStyle = BYU_BLUE;
-      ctx.font = "600 16px 'Geist Sans', system-ui, sans-serif";
+      ctx.font = `700 26px ${SANS}`;
       ctx.textAlign = "center";
-      ctx.fillText("AI IN BUSINESS SOCIETY  •  BRIGHAM YOUNG UNIVERSITY", W / 2, 105);
+      ctx.translate(W / 2, H / 2);
+      ctx.rotate(-Math.PI / 6);
+      for (let row = -6; row <= 6; row++) {
+        for (let col = -3; col <= 3; col++) {
+          ctx.fillText("AI IN BUSINESS SOCIETY", col * 420, row * 60);
+        }
+      }
+      ctx.restore();
 
-      // Title
-      ctx.fillStyle = BYU_BLUE;
-      ctx.font = "700 42px 'Geist Sans', system-ui, sans-serif";
-      ctx.fillText("AI Proficiency Certificate", W / 2, 185);
+      // Large faded logo watermark in center
+      if (logoImg) {
+        ctx.save();
+        ctx.globalAlpha = 0.04;
+        const wmH = 280;
+        const wmW = (logoImg.width / logoImg.height) * wmH;
+        ctx.drawImage(logoImg, W / 2 - wmW / 2, H / 2 - wmH / 2 + 20, wmW, wmH);
+        ctx.restore();
+      }
 
-      // Gold line under title
+      // Triple border system
+      ctx.strokeStyle = BYU_BLUE;
+      ctx.lineWidth = 8;
+      ctx.strokeRect(16, 16, W - 32, H - 32);
+
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(28, 28, W - 56, H - 56);
+
+      ctx.strokeStyle = BYU_BLUE;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(36, 36, W - 72, H - 72);
+
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(42, 42, W - 84, H - 84);
+
+      // Corner ornaments
+      drawCornerOrnament(ctx, 52, 52, 50, 0);
+      drawCornerOrnament(ctx, W - 52, 52, 50, Math.PI / 2);
+      drawCornerOrnament(ctx, W - 52, H - 52, 50, Math.PI);
+      drawCornerOrnament(ctx, 52, H - 52, 50, -Math.PI / 2);
+      drawCornerOrnament(ctx, 62, 62, 28, 0);
+      drawCornerOrnament(ctx, W - 62, 62, 28, Math.PI / 2);
+      drawCornerOrnament(ctx, W - 62, H - 62, 28, Math.PI);
+      drawCornerOrnament(ctx, 62, H - 62, 28, -Math.PI / 2);
+
+      // Top accent lines
       ctx.strokeStyle = GOLD;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(350, 200);
-      ctx.lineTo(850, 200);
+      ctx.moveTo(100, 82);
+      ctx.lineTo(W - 100, 82);
+      ctx.stroke();
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(130, 78);
+      ctx.lineTo(W - 130, 78);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(130, 86);
+      ctx.lineTo(W - 130, 86);
       ctx.stroke();
 
-      // "This certifies that"
-      ctx.fillStyle = "#666666";
-      ctx.font = "400 18px 'Geist Sans', system-ui, sans-serif";
-      ctx.fillText("This certifies that", W / 2, 260);
+      // Top diamond cluster
+      ctx.fillStyle = GOLD;
+      drawDiamond(ctx, W / 2, 82, 7);
+      drawDiamond(ctx, W / 2 - 20, 82, 3);
+      drawDiamond(ctx, W / 2 + 20, 82, 3);
+      ctx.beginPath();
+      ctx.arc(105, 82, 2.5, 0, Math.PI * 2);
+      ctx.arc(W - 105, 82, 2.5, 0, Math.PI * 2);
+      ctx.fill();
 
-      // Member name
+      // University subheader - elegant spaced small caps
       ctx.fillStyle = BYU_BLUE;
-      ctx.font = "700 36px 'Geist Sans', system-ui, sans-serif";
-      ctx.fillText(memberName || "Member", W / 2, 315);
+      ctx.textAlign = "center";
+      ctx.font = `500 11px ${SANS}`;
+      ctx.fillText(
+        "B R I G H A M   Y O U N G   U N I V E R S I T Y",
+        W / 2,
+        110
+      );
+      ctx.fillStyle = GOLD;
+      ctx.font = `400 10px ${SANS}`;
+      ctx.fillText(
+        "Marriott School of Business",
+        W / 2,
+        125
+      );
 
-      // Gold line under name
+      // Decorative divider
+      const divY = 184;
       ctx.strokeStyle = GOLD;
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(300, 330);
-      ctx.lineTo(900, 330);
+      ctx.moveTo(260, divY);
+      ctx.lineTo(W / 2 - 40, divY);
       ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(W / 2 + 40, divY);
+      ctx.lineTo(W - 260, divY);
+      ctx.stroke();
+      ctx.fillStyle = GOLD;
+      drawDiamond(ctx, W / 2, divY, 5);
+      ctx.beginPath();
+      ctx.arc(W / 2 - 18, divY, 1.5, 0, Math.PI * 2);
+      ctx.arc(W / 2 + 18, divY, 1.5, 0, Math.PI * 2);
+      ctx.fill();
 
-      // Body text
-      ctx.fillStyle = "#333333";
-      ctx.font = "400 17px 'Geist Sans', system-ui, sans-serif";
+      // Title - elegant serif
+      ctx.fillStyle = BYU_BLUE;
+      ctx.font = `700 48px ${SERIF}`;
+      ctx.fillText("Certificate of AI Proficiency", W / 2, 238);
+
+      // Gold double accent under title
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(320, 256);
+      ctx.lineTo(880, 256);
+      ctx.stroke();
+      ctx.lineWidth = 0.75;
+      ctx.beginPath();
+      ctx.moveTo(360, 264);
+      ctx.lineTo(840, 264);
+      ctx.stroke();
+      ctx.fillStyle = GOLD;
+      ctx.beginPath();
+      ctx.arc(320, 256, 2, 0, Math.PI * 2);
+      ctx.arc(880, 256, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // "This is to certify that" - italic serif
+      ctx.fillStyle = "#999999";
+      ctx.font = `italic 400 19px ${SERIF}`;
+      ctx.fillText("This is to certify that", W / 2, 305);
+
+      // Member name - large elegant serif
+      ctx.fillStyle = BYU_BLUE;
+      ctx.font = `700 44px ${SERIF}`;
+      ctx.fillText(displayName, W / 2, 360);
+
+      // Gold line under name with end diamonds
+      const nameWidth = ctx.measureText(displayName).width;
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(W / 2 - nameWidth / 2 - 40, 376);
+      ctx.lineTo(W / 2 + nameWidth / 2 + 40, 376);
+      ctx.stroke();
+      ctx.fillStyle = GOLD;
+      drawDiamond(ctx, W / 2 - nameWidth / 2 - 48, 376, 3);
+      drawDiamond(ctx, W / 2 + nameWidth / 2 + 48, 376, 3);
+
+      // Body text - italic serif for elegance
+      ctx.fillStyle = "#555555";
+      ctx.font = `italic 400 16px ${SERIF}`;
       ctx.fillText(
-        `has demonstrated commitment to artificial intelligence by attending`,
+        "has demonstrated proficient knowledge and applied skills in artificial intelligence",
         W / 2,
-        385
+        418
       );
       ctx.fillText(
-        `${eventsAttended || 4} AI in Business Society meetings at Brigham Young University,`,
+        "through active participation in the AI in Business Society at Brigham Young University.",
         W / 2,
-        415
+        443
       );
-      ctx.fillText(
-        "earning proficiency recognition and access to premier AI recruiting.",
-        W / 2,
-        445
-      );
+
+      // Divider before date
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth = 0.75;
+      ctx.beginPath();
+      ctx.moveTo(W / 2 - 80, 472);
+      ctx.lineTo(W / 2 + 80, 472);
+      ctx.stroke();
+      ctx.fillStyle = GOLD;
+      drawDiamond(ctx, W / 2, 472, 3);
 
       // Date
       const dateStr =
@@ -100,50 +290,201 @@ export default function Certificate({ memberName, eventsAttended, completionDate
           month: "long",
           day: "numeric",
         });
-      ctx.fillStyle = "#666666";
-      ctx.font = "400 15px 'Geist Sans', system-ui, sans-serif";
-      ctx.fillText(dateStr, W / 2, 510);
+      ctx.fillStyle = "#999999";
+      ctx.font = `italic 400 14px ${SERIF}`;
+      ctx.fillText("Awarded on", W / 2, 500);
+      ctx.fillStyle = BYU_BLUE;
+      ctx.font = `500 17px ${SERIF}`;
+      ctx.fillText(dateStr, W / 2, 522);
 
-      // Signature section — left side (advisor)
-      ctx.strokeStyle = "#999999";
+      // ---- SIGNATURE SECTION ----
+      const sigBaseY = 650;
+
+      // LEFT: Member typed signature in script font
+      const leftCenterX = 300;
+      if (signatureText) {
+        ctx.save();
+        ctx.fillStyle = BYU_BLUE;
+        ctx.font = `32px ${SCRIPT}`;
+        ctx.textAlign = "center";
+        ctx.fillText(signatureText, leftCenterX, sigBaseY - 12);
+        ctx.restore();
+      }
+
+      ctx.strokeStyle = BYU_BLUE;
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(200, 640);
-      ctx.lineTo(520, 640);
+      ctx.moveTo(160, sigBaseY);
+      ctx.lineTo(440, sigBaseY);
       ctx.stroke();
 
       ctx.fillStyle = BYU_BLUE;
-      ctx.font = "italic 22px 'Geist Sans', system-ui, sans-serif";
-      ctx.fillText("Dr. James Gaskin", 360, 630);
+      ctx.font = `600 13px ${SANS}`;
+      ctx.textAlign = "center";
+      ctx.fillText(displayName, leftCenterX, sigBaseY + 20);
+      ctx.fillStyle = "#999999";
+      ctx.font = `italic 400 11px ${SERIF}`;
+      ctx.fillText("Certificate Recipient", leftCenterX, sigBaseY + 36);
 
-      ctx.fillStyle = "#666666";
-      ctx.font = "400 14px 'Geist Sans', system-ui, sans-serif";
-      ctx.fillText("Dr. James Gaskin", 360, 660);
-      ctx.fillText("Faculty Advisor, AI in Business Society", 360, 680);
+      // CENTER: Gold starburst seal
+      const sealX = W / 2;
+      const sealY = sigBaseY - 26;
+      const sealR = 42;
 
-      // Signature section — right side (organization)
-      ctx.strokeStyle = "#999999";
+      ctx.save();
+      ctx.shadowColor = "rgba(197, 164, 78, 0.3)";
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = GOLD;
       ctx.beginPath();
-      ctx.moveTo(680, 640);
-      ctx.lineTo(1000, 640);
+      const teeth = 36;
+      for (let i = 0; i < teeth; i++) {
+        const angle = (Math.PI * 2 * i) / teeth;
+        const r = i % 2 === 0 ? sealR + 6 : sealR - 2;
+        const px = sealX + Math.cos(angle) * r;
+        const py = sealY + Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = BG_WHITE;
+      ctx.beginPath();
+      ctx.arc(sealX, sealY, sealR - 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(sealX, sealY, sealR - 8, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(sealX, sealY, sealR - 13, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.fillStyle = "#666666";
-      ctx.font = "400 14px 'Geist Sans', system-ui, sans-serif";
-      ctx.fillText("AI in Business Society", 840, 660);
-      ctx.fillText("Marriott School of Business, BYU", 840, 680);
+      ctx.fillStyle = GOLD;
+      ctx.font = `600 7.5px ${SANS}`;
+      const sealText = "AI IN BUSINESS SOCIETY \u2022 BYU \u2022";
+      const angleStep = (Math.PI * 2) / sealText.length;
+      for (let i = 0; i < sealText.length; i++) {
+        ctx.save();
+        ctx.translate(sealX, sealY);
+        ctx.rotate(-Math.PI / 2 + angleStep * i);
+        ctx.translate(0, -sealR + 16);
+        ctx.textAlign = "center";
+        ctx.fillText(sealText[i], 0, 0);
+        ctx.restore();
+      }
 
-      // Bottom accent bar
+      ctx.fillStyle = GOLD;
+      ctx.font = `700 18px ${SERIF}`;
+      ctx.textAlign = "center";
+      ctx.fillText("AI", sealX, sealY + 7);
+
+      // RIGHT: Advisor signature (uploaded image or placeholder)
+      const rightCenterX = 900;
+
+      if (advisorSigImg) {
+        // Draw signature with white background removed
+        const maxW = 320;
+        const maxH = 80;
+        const ratio = Math.min(maxW / advisorSigImg.width, maxH / advisorSigImg.height);
+        const imgW = advisorSigImg.width * ratio;
+        const imgH = advisorSigImg.height * ratio;
+
+        // Render to temp canvas and strip white pixels
+        const tmpCanvas = document.createElement("canvas");
+        tmpCanvas.width = Math.ceil(imgW);
+        tmpCanvas.height = Math.ceil(imgH);
+        const tmpCtx = tmpCanvas.getContext("2d");
+        tmpCtx.drawImage(advisorSigImg, 0, 0, imgW, imgH);
+        const imgData = tmpCtx.getImageData(0, 0, tmpCanvas.width, tmpCanvas.height);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const brightness = (d[i] + d[i + 1] + d[i + 2]) / 3;
+          if (brightness > 200) {
+            d[i + 3] = 0; // make white/light pixels transparent
+          } else {
+            // darken the ink slightly for better contrast
+            d[i] = Math.max(0, d[i] - 40);
+            d[i + 1] = Math.max(0, d[i + 1] - 40);
+            d[i + 2] = Math.max(0, d[i + 2] - 40);
+          }
+        }
+        tmpCtx.putImageData(imgData, 0, 0);
+
+        ctx.drawImage(
+          tmpCanvas,
+          rightCenterX - imgW / 2,
+          sigBaseY - 10 - imgH,
+          imgW,
+          imgH
+        );
+      } else {
+        ctx.fillStyle = "#cccccc";
+        ctx.font = `italic 400 13px ${SERIF}`;
+        ctx.textAlign = "center";
+        ctx.fillText("(signature pending)", rightCenterX, sigBaseY - 16);
+      }
+
+      ctx.strokeStyle = BYU_BLUE;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(760, sigBaseY);
+      ctx.lineTo(1040, sigBaseY);
+      ctx.stroke();
+
       ctx.fillStyle = BYU_BLUE;
-      ctx.fillRect(60, H - 68, W - 120, 8);
+      ctx.font = `600 13px ${SANS}`;
+      ctx.textAlign = "center";
+      ctx.fillText("Dr. James Gaskin", rightCenterX, sigBaseY + 20);
+      ctx.fillStyle = "#999999";
+      ctx.font = `italic 400 11px ${SERIF}`;
+      ctx.fillText("Club Advisor, AI in Business Society", rightCenterX, sigBaseY + 36);
+
+      // Bottom accent lines
+      const btmY = H - 78;
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(100, btmY);
+      ctx.lineTo(W - 100, btmY);
+      ctx.stroke();
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(130, btmY + 4);
+      ctx.lineTo(W - 130, btmY + 4);
+      ctx.stroke();
+
+      ctx.fillStyle = GOLD;
+      drawDiamond(ctx, W / 2, btmY, 7);
+      drawDiamond(ctx, W / 2 - 20, btmY, 3);
+      drawDiamond(ctx, W / 2 + 20, btmY, 3);
+      ctx.beginPath();
+      ctx.arc(105, btmY, 2.5, 0, Math.PI * 2);
+      ctx.arc(W - 105, btmY, 2.5, 0, Math.PI * 2);
+      ctx.fill();
 
       // Bottom text
-      ctx.fillStyle = "#999999";
-      ctx.font = "400 12px 'Geist Sans', system-ui, sans-serif";
-      ctx.fillText("aiinbusinesssociety.org", W / 2, H - 42);
+      ctx.fillStyle = "#bbbbbb";
+      ctx.font = `400 10px ${SANS}`;
+      ctx.textAlign = "center";
+      ctx.fillText("aiinbusinesssociety.org", W / 2, H - 50);
+
+      ctx.fillStyle = "#cccccc";
+      ctx.font = `400 8px ${SANS}`;
+      const verifyId = `CERT-${Date.now().toString(36).toUpperCase()}`;
+      ctx.fillText(verifyId, W / 2, H - 36);
     },
-    [memberName, eventsAttended, completionDate]
+    [memberName, completionDate, signatureText, advisorSigImg, logoImg, fontsReady]
   );
+
+  // Redraw when inputs change
+  useEffect(() => {
+    if (canvasRef.current) drawCertificate(canvasRef.current);
+  }, [drawCertificate]);
 
   function handleDownload() {
     const canvas = canvasRef.current;
@@ -161,9 +502,27 @@ export default function Certificate({ memberName, eventsAttended, completionDate
   }
 
   return (
-    <div className="space-y-4">
-      {/* Preview */}
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div className="space-y-5">
+      {/* Signature input */}
+      <div className="max-w-sm space-y-2">
+        <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+          <Type size={14} />
+          Type your signature
+        </label>
+        <input
+          type="text"
+          value={signatureText}
+          onChange={(e) => setSignatureText(e.target.value)}
+          placeholder="Type your full name..."
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[color:var(--byu-blue)] focus:outline-none focus:ring-1 focus:ring-[color:var(--byu-blue)]"
+        />
+        <p className="text-xs text-gray-400">
+          Your name will appear as a signature on the certificate
+        </p>
+      </div>
+
+      {/* Certificate Preview */}
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md">
         <canvas
           ref={(el) => {
             canvasRef.current = el;
@@ -176,10 +535,10 @@ export default function Certificate({ memberName, eventsAttended, completionDate
 
       <button
         onClick={handleDownload}
-        className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--byu-blue)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+        className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--byu-blue)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 shadow-sm"
       >
         <Download size={16} />
-        Download Certificate
+        Download Certificate (PNG)
       </button>
     </div>
   );
