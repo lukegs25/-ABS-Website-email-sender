@@ -1,10 +1,18 @@
 {
   "version": 2,
   "framework": "nextjs",
-  "buildCommand": "pnpm build",
-  "devCommand": "pnpm dev",
-  "installCommand": "pnpm install",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm ci",
   "outputDirectory": ".next",
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "scai-abs-email.vercel.app" }],
+      "destination": "https://aiinbusinesssociety.org/$1",
+      "permanent": true
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/story",
