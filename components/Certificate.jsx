@@ -456,13 +456,6 @@ export default function Certificate({ memberName, eventsAttended, completionDate
       ctx.arc(W - 105, btmY, 2.5, 0, Math.PI * 2);
       ctx.fill();
 
-      // Bottom-left logo
-      if (logoImg) {
-        const logoH = 40;
-        const logoW = (logoImg.width / logoImg.height) * logoH;
-        ctx.drawImage(logoImg, 60, H - 75, logoW, logoH);
-      }
-
     },
     [memberName, completionDate, advisorSigImg, presidentSigImg, logoImg, fontsReady]
   );
