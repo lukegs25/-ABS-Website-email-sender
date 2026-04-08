@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef, useCallback, useState, useEffect } from "react";
-import { Download } from "lucide-react";
+import { Download, FileImage, FileText, Linkedin } from "lucide-react";
 
 const BYU_BLUE = "#002e5d";
 const GOLD = "#c5a44e";
-const BG_WHITE = "#ffffff";
+const BG_WHITE = "#faf8f3";
 
 // Google Fonts loaded for canvas use
 const SERIF = "'Cormorant Garamond', Georgia, serif";
@@ -474,7 +474,7 @@ export default function Certificate({ memberName, eventsAttended, completionDate
     if (canvasRef.current) drawCertificate(canvasRef.current);
   }, [drawCertificate]);
 
-  function handleDownload() {
+  function handleDownloadPNG() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     drawCertificate(canvas);
@@ -487,6 +487,30 @@ export default function Certificate({ memberName, eventsAttended, completionDate
       a.click();
       URL.revokeObjectURL(url);
     }, "image/png");
+  }
+
+  function handleDownloadPDF() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    drawCertificate(canvas);
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = document.createElement("iframe");
+    pdf.style.display = "none";
+    document.body.appendChild(pdf);
+    const doc = pdf.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <html><head><title>Certificate</title><style>
+        @page { size: landscape; margin: 0; }
+        body { margin: 0; }
+        img { width: 100vw; height: auto; display: block; }
+      </style></head><body><img src="${imgData}" /></body></html>
+    `);
+    doc.close();
+    setTimeout(() => {
+      pdf.contentWindow.print();
+      setTimeout(() => document.body.removeChild(pdf), 1000);
+    }, 500);
   }
 
   return (
@@ -503,13 +527,37 @@ export default function Certificate({ memberName, eventsAttended, completionDate
         />
       </div>
 
-      <button
-        onClick={handleDownload}
-        className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--byu-blue)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 shadow-sm"
-      >
-        <Download size={16} />
-        Download Certificate (PNG)
-      </button>
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={handleDownloadPNG}
+          className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--byu-blue)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 shadow-sm"
+        >
+          <FileImage size={16} />
+          Download PNG
+        </button>
+        <button
+          onClick={handleDownloadPDF}
+          className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--byu-blue)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 shadow-sm"
+        >
+          <FileText size={16} />
+          Download PDF
+        </button>
+      </div>
+
+      {/* LinkedIn Instructions */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Linkedin size={20} className="text-[#0A66C2]" />
+          <h3 className="text-base font-semibold text-gray-900">Add to Your LinkedIn Profile</h3>
+        </div>
+        <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+          <li>Scroll to the bottom of your LinkedIn profile and click <span className="font-semibold">Add License or Certification</span></li>
+          <li><span className="font-semibold">Name:</span> Machine Learning Basics</li>
+          <li><span className="font-semibold">Issuing Organization:</span> AI in Business Society <span className="text-gray-500">(click on the page when it pops up)</span></li>
+          <li><span className="font-semibold">Issue Date:</span> 3/26/2026</li>
+          <li><span className="font-semibold">Media:</span> Click &quot;Add photo&quot; and upload your downloaded certificate image</li>
+        </ol>
+      </div>
     </div>
   );
 }
