@@ -156,11 +156,43 @@ export default function HomePage() {
         <StatsRow />
       </motion.div>
 
-      <motion.div
+      {/* Upcoming Event Flyers */}
+      <motion.section
         className="relative z-10"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+      >
+        <h2 className="text-2xl font-bold text-[color:var(--byu-blue)] mb-4">
+          Upcoming Events
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-200/80 bg-white">
+            <Image
+              src="/rich_lachowsky_720.jpg"
+              alt="Rich Lachowsky — Real Estate and AI — April 8, 2026, 7PM, TNRB 251"
+              width={720}
+              height={900}
+              className="w-full h-auto"
+            />
+          </div>
+          <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-200/80 bg-white">
+            <Image
+              src="/chris_brosseau.png"
+              alt="Chris Brosseau — AI Proficiency Certificate — April 15, 2026, 7PM, TNRB 112"
+              width={720}
+              height={900}
+              className="w-full h-auto"
+            />
+          </div>
+        </div>
+      </motion.section>
+
+      <motion.div
+        className="relative z-10"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 0.15 }}
       >
         <CalendarSection />
       </motion.div>
@@ -169,7 +201,7 @@ export default function HomePage() {
         className="relative z-10"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 0.25 }}
       >
         <JobBoard />
       </motion.div>
@@ -178,7 +210,7 @@ export default function HomePage() {
         className="relative z-10"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 0.35 }}
       >
         <StarUsers />
       </motion.div>
@@ -188,7 +220,7 @@ export default function HomePage() {
         className="relative z-10 overflow-hidden rounded-2xl bg-gradient-to-r from-[color:var(--byu-blue)] to-blue-800 p-6 sm:p-8 shadow-lg"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut", delay: 0.4 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 0.45 }}
       >
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
