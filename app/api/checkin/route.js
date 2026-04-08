@@ -29,15 +29,12 @@ export async function POST(req) {
       return NextResponse.json({ error: "Password is required" }, { status: 400 });
     }
 
-    // Find an event with this password from the last 48 hours
-    const cutoff = new Date();
-    cutoff.setHours(cutoff.getHours() - 48);
-
+    // Find an event with this password (no date restriction — admins can
+    // generate passcodes for past events to backfill attendance)
     const { data: events, error: eventError } = await serviceClient
       .from("events")
       .select("id, title, star_value, event_date, password_generated_at")
       .eq("event_password", password.trim())
-      .gte("event_date", cutoff.toISOString())
       .order("event_date", { ascending: false })
       .limit(1);
 
