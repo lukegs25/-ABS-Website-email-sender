@@ -5,7 +5,7 @@ import { Download, FileImage, FileText, Linkedin } from "lucide-react";
 
 const BYU_BLUE = "#002e5d";
 const GOLD = "#c5a44e";
-const BG_WHITE = "#faf8f3";
+const BG_WHITE = "#ffffff";
 
 // Google Fonts loaded for canvas use
 const SERIF = "'Cormorant Garamond', Georgia, serif";
