@@ -7,7 +7,7 @@ export default function Footer() {
     <footer className="relative z-10 mt-auto border-t border-gray-200 bg-white">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-4 py-8 sm:flex-row sm:justify-between sm:px-6 md:px-8">
         <div className="flex items-center gap-3">
-          <Image src="/logo.png" alt="ABS Logo" width={32} height={32} className="h-8 w-auto" />
+          <Image src="/logo.png" alt="ABS Logo" width={128} height={128} className="h-8 w-auto" />
           <span className="text-sm text-gray-500">
             AI in Business Society &middot; BYU
           </span>
