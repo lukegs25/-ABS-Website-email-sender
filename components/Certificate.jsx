@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useState, useEffect } from "react";
-import { Download, Type } from "lucide-react";
+import { Download } from "lucide-react";
 
 const BYU_BLUE = "#002e5d";
 const GOLD = "#c5a44e";
@@ -62,8 +62,8 @@ function drawDiamond(ctx, cx, cy, r) {
 
 export default function Certificate({ memberName, eventsAttended, completionDate }) {
   const canvasRef = useRef(null);
-  const [signatureText, setSignatureText] = useState("");
   const [advisorSigImg, setAdvisorSigImg] = useState(null);
+  const [presidentSigImg, setPresidentSigImg] = useState(null);
   const [logoImg, setLogoImg] = useState(null);
   const [fontsReady, setFontsReady] = useState(false);
 
@@ -78,6 +78,10 @@ export default function Certificate({ memberName, eventsAttended, completionDate
     const sig = new Image();
     sig.onload = () => setAdvisorSigImg(sig);
     sig.src = "/gaskin-signature.jpg";
+
+    const presSig = new Image();
+    presSig.onload = () => setPresidentSigImg(presSig);
+    presSig.src = "/webster-signature.png";
   }, []);
 
   const drawCertificate = useCallback(
@@ -95,8 +99,7 @@ export default function Certificate({ memberName, eventsAttended, completionDate
       ctx.fillStyle = BG_WHITE;
       ctx.fillRect(0, 0, W, H);
 
-      // Use typed signature as the display name if provided
-      const displayName = signatureText || memberName || "Member Name";
+      const displayName = memberName || "Member Name";
 
       // Subtle watermark background
       ctx.save();
@@ -300,14 +303,47 @@ export default function Certificate({ memberName, eventsAttended, completionDate
       // ---- SIGNATURE SECTION ----
       const sigBaseY = 650;
 
-      // LEFT: Member typed signature in script font
+      // LEFT: President signature
       const leftCenterX = 300;
-      if (signatureText) {
+      if (presidentSigImg) {
+        const maxW = 320;
+        const maxH = 80;
+        const ratio = Math.min(maxW / presidentSigImg.width, maxH / presidentSigImg.height);
+        const imgW = presidentSigImg.width * ratio;
+        const imgH = presidentSigImg.height * ratio;
+
+        const tmpCanvas = document.createElement("canvas");
+        tmpCanvas.width = Math.ceil(imgW);
+        tmpCanvas.height = Math.ceil(imgH);
+        const tmpCtx = tmpCanvas.getContext("2d");
+        tmpCtx.drawImage(presidentSigImg, 0, 0, imgW, imgH);
+        const imgData = tmpCtx.getImageData(0, 0, tmpCanvas.width, tmpCanvas.height);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const brightness = (d[i] + d[i + 1] + d[i + 2]) / 3;
+          if (brightness > 200) {
+            d[i + 3] = 0;
+          } else {
+            d[i] = Math.max(0, d[i] - 40);
+            d[i + 1] = Math.max(0, d[i + 1] - 40);
+            d[i + 2] = Math.max(0, d[i + 2] - 40);
+          }
+        }
+        tmpCtx.putImageData(imgData, 0, 0);
+
+        ctx.drawImage(
+          tmpCanvas,
+          leftCenterX - imgW / 2,
+          sigBaseY - 10 - imgH,
+          imgW,
+          imgH
+        );
+      } else {
         ctx.save();
         ctx.fillStyle = BYU_BLUE;
         ctx.font = `32px ${SCRIPT}`;
         ctx.textAlign = "center";
-        ctx.fillText(signatureText, leftCenterX, sigBaseY - 12);
+        ctx.fillText("Reed Webster", leftCenterX, sigBaseY - 12);
         ctx.restore();
       }
 
@@ -321,10 +357,10 @@ export default function Certificate({ memberName, eventsAttended, completionDate
       ctx.fillStyle = BYU_BLUE;
       ctx.font = `600 13px ${SANS}`;
       ctx.textAlign = "center";
-      ctx.fillText(displayName, leftCenterX, sigBaseY + 20);
+      ctx.fillText("BYU AI in Business Society", leftCenterX, sigBaseY + 20);
       ctx.fillStyle = "#999999";
       ctx.font = `italic 400 11px ${SERIF}`;
-      ctx.fillText("Certificate Recipient", leftCenterX, sigBaseY + 36);
+      ctx.fillText("Club Leadership", leftCenterX, sigBaseY + 36);
 
       // CENTER: Gold starburst seal
       const sealX = W / 2;
@@ -478,7 +514,7 @@ export default function Certificate({ memberName, eventsAttended, completionDate
       const verifyId = `CERT-${Date.now().toString(36).toUpperCase()}`;
       ctx.fillText(verifyId, W / 2, H - 36);
     },
-    [memberName, completionDate, signatureText, advisorSigImg, logoImg, fontsReady]
+    [memberName, completionDate, advisorSigImg, presidentSigImg, logoImg, fontsReady]
   );
 
   // Redraw when inputs change
@@ -503,24 +539,6 @@ export default function Certificate({ memberName, eventsAttended, completionDate
 
   return (
     <div className="space-y-5">
-      {/* Signature input */}
-      <div className="max-w-sm space-y-2">
-        <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
-          <Type size={14} />
-          Type your signature
-        </label>
-        <input
-          type="text"
-          value={signatureText}
-          onChange={(e) => setSignatureText(e.target.value)}
-          placeholder="Type your full name..."
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[color:var(--byu-blue)] focus:outline-none focus:ring-1 focus:ring-[color:var(--byu-blue)]"
-        />
-        <p className="text-xs text-gray-400">
-          Your name will appear as a signature on the certificate
-        </p>
-      </div>
-
       {/* Certificate Preview */}
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md">
         <canvas
