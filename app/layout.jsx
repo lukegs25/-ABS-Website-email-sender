@@ -9,6 +9,7 @@ export const metadata = {
   description:
     "BYU's AI in Business Society — connecting students and faculty with the tools, skills, and community to lead in an AI-driven world.",
   icons: {
+    icon: "/icon.png",
     apple: "/apple-icon.png",
   },
   openGraph: {
