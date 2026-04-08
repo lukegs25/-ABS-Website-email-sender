@@ -311,33 +311,7 @@ export default function Certificate({ memberName, eventsAttended, completionDate
         const ratio = Math.min(maxW / presidentSigImg.width, maxH / presidentSigImg.height);
         const imgW = presidentSigImg.width * ratio;
         const imgH = presidentSigImg.height * ratio;
-
-        const tmpCanvas = document.createElement("canvas");
-        tmpCanvas.width = Math.ceil(imgW);
-        tmpCanvas.height = Math.ceil(imgH);
-        const tmpCtx = tmpCanvas.getContext("2d");
-        tmpCtx.drawImage(presidentSigImg, 0, 0, imgW, imgH);
-        const imgData = tmpCtx.getImageData(0, 0, tmpCanvas.width, tmpCanvas.height);
-        const d = imgData.data;
-        for (let i = 0; i < d.length; i += 4) {
-          const brightness = (d[i] + d[i + 1] + d[i + 2]) / 3;
-          if (brightness > 200) {
-            d[i + 3] = 0;
-          } else {
-            d[i] = Math.max(0, d[i] - 40);
-            d[i + 1] = Math.max(0, d[i + 1] - 40);
-            d[i + 2] = Math.max(0, d[i + 2] - 40);
-          }
-        }
-        tmpCtx.putImageData(imgData, 0, 0);
-
-        ctx.drawImage(
-          tmpCanvas,
-          leftCenterX - imgW / 2,
-          sigBaseY - 10 - imgH,
-          imgW,
-          imgH
-        );
+        ctx.drawImage(presidentSigImg, leftCenterX - imgW / 2, sigBaseY - 10 - imgH, imgW, imgH);
       } else {
         ctx.save();
         ctx.fillStyle = BYU_BLUE;
@@ -423,41 +397,12 @@ export default function Certificate({ memberName, eventsAttended, completionDate
       const rightCenterX = 900;
 
       if (advisorSigImg) {
-        // Draw signature with white background removed
         const maxW = 320;
         const maxH = 80;
         const ratio = Math.min(maxW / advisorSigImg.width, maxH / advisorSigImg.height);
         const imgW = advisorSigImg.width * ratio;
         const imgH = advisorSigImg.height * ratio;
-
-        // Render to temp canvas and strip white pixels
-        const tmpCanvas = document.createElement("canvas");
-        tmpCanvas.width = Math.ceil(imgW);
-        tmpCanvas.height = Math.ceil(imgH);
-        const tmpCtx = tmpCanvas.getContext("2d");
-        tmpCtx.drawImage(advisorSigImg, 0, 0, imgW, imgH);
-        const imgData = tmpCtx.getImageData(0, 0, tmpCanvas.width, tmpCanvas.height);
-        const d = imgData.data;
-        for (let i = 0; i < d.length; i += 4) {
-          const brightness = (d[i] + d[i + 1] + d[i + 2]) / 3;
-          if (brightness > 200) {
-            d[i + 3] = 0; // make white/light pixels transparent
-          } else {
-            // darken the ink slightly for better contrast
-            d[i] = Math.max(0, d[i] - 40);
-            d[i + 1] = Math.max(0, d[i + 1] - 40);
-            d[i + 2] = Math.max(0, d[i + 2] - 40);
-          }
-        }
-        tmpCtx.putImageData(imgData, 0, 0);
-
-        ctx.drawImage(
-          tmpCanvas,
-          rightCenterX - imgW / 2,
-          sigBaseY - 10 - imgH,
-          imgW,
-          imgH
-        );
+        ctx.drawImage(advisorSigImg, rightCenterX - imgW / 2, sigBaseY - 10 - imgH, imgW, imgH);
       } else {
         ctx.fillStyle = "#cccccc";
         ctx.font = `italic 400 13px ${SERIF}`;
@@ -502,6 +447,13 @@ export default function Certificate({ memberName, eventsAttended, completionDate
       ctx.arc(105, btmY, 2.5, 0, Math.PI * 2);
       ctx.arc(W - 105, btmY, 2.5, 0, Math.PI * 2);
       ctx.fill();
+
+      // Bottom-left logo
+      if (logoImg) {
+        const logoH = 40;
+        const logoW = (logoImg.width / logoImg.height) * logoH;
+        ctx.drawImage(logoImg, 60, H - 75, logoW, logoH);
+      }
 
       // Bottom text
       ctx.fillStyle = "#bbbbbb";
