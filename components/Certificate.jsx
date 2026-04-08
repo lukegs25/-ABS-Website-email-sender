@@ -311,7 +311,11 @@ export default function Certificate({ memberName, eventsAttended, completionDate
         const ratio = Math.min(maxW / presidentSigImg.width, maxH / presidentSigImg.height);
         const imgW = presidentSigImg.width * ratio;
         const imgH = presidentSigImg.height * ratio;
-        ctx.drawImage(presidentSigImg, leftCenterX - imgW / 2, sigBaseY - 10 - imgH, imgW, imgH);
+        const sx = leftCenterX - imgW / 2;
+        const sy = sigBaseY - 10 - imgH;
+        ctx.fillStyle = BG_WHITE;
+        ctx.fillRect(sx, sy, imgW, imgH);
+        ctx.drawImage(presidentSigImg, sx, sy, imgW, imgH);
       } else {
         ctx.save();
         ctx.fillStyle = BYU_BLUE;
@@ -402,7 +406,11 @@ export default function Certificate({ memberName, eventsAttended, completionDate
         const ratio = Math.min(maxW / advisorSigImg.width, maxH / advisorSigImg.height);
         const imgW = advisorSigImg.width * ratio;
         const imgH = advisorSigImg.height * ratio;
-        ctx.drawImage(advisorSigImg, rightCenterX - imgW / 2, sigBaseY - 10 - imgH, imgW, imgH);
+        const sx = rightCenterX - imgW / 2;
+        const sy = sigBaseY - 10 - imgH;
+        ctx.fillStyle = BG_WHITE;
+        ctx.fillRect(sx, sy, imgW, imgH);
+        ctx.drawImage(advisorSigImg, sx, sy, imgW, imgH);
       } else {
         ctx.fillStyle = "#cccccc";
         ctx.font = `italic 400 13px ${SERIF}`;
@@ -455,16 +463,6 @@ export default function Certificate({ memberName, eventsAttended, completionDate
         ctx.drawImage(logoImg, 60, H - 75, logoW, logoH);
       }
 
-      // Bottom text
-      ctx.fillStyle = "#bbbbbb";
-      ctx.font = `400 10px ${SANS}`;
-      ctx.textAlign = "center";
-      ctx.fillText("aiinbusinesssociety.org", W / 2, H - 50);
-
-      ctx.fillStyle = "#cccccc";
-      ctx.font = `400 8px ${SANS}`;
-      const verifyId = `CERT-${Date.now().toString(36).toUpperCase()}`;
-      ctx.fillText(verifyId, W / 2, H - 36);
     },
     [memberName, completionDate, advisorSigImg, presidentSigImg, logoImg, fontsReady]
   );
