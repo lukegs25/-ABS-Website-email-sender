@@ -357,10 +357,10 @@ export default function Certificate({ memberName, eventsAttended, completionDate
       ctx.fillStyle = BYU_BLUE;
       ctx.font = `600 13px ${SANS}`;
       ctx.textAlign = "center";
-      ctx.fillText("BYU AI in Business Society", leftCenterX, sigBaseY + 20);
+      ctx.fillText("Reed Webster", leftCenterX, sigBaseY + 20);
       ctx.fillStyle = "#999999";
       ctx.font = `italic 400 11px ${SERIF}`;
-      ctx.fillText("Club Leadership", leftCenterX, sigBaseY + 36);
+      ctx.fillText("President, BYU AI in Business Society", leftCenterX, sigBaseY + 36);
 
       // CENTER: Gold starburst seal
       const sealX = W / 2;
