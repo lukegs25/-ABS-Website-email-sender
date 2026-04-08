@@ -507,9 +507,9 @@ export default function SettingsClient({
             <p className="text-2xl font-bold text-[color:var(--byu-blue)]">{eventsAttended}</p>
             <p className="text-xs text-gray-600">events attended</p>
           </div>
-          {eventsAttended >= 4 && (
+          {eventsAttended >= 3 && (
             <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700">
-              🏆 Attended 4+ events
+              🏆 Attended 3+ events
             </span>
           )}
         </div>

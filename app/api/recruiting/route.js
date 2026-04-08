@@ -29,9 +29,9 @@ export async function GET() {
     .select("id", { count: "exact", head: true })
     .eq("member_id", user.id);
 
-  if ((count || 0) < 4) {
+  if ((count || 0) < 3) {
     return NextResponse.json(
-      { error: "You need to attend 4 meetings to access premier recruiting", eventsAttended: count || 0 },
+      { error: "You need to attend 3 meetings to access premier recruiting", eventsAttended: count || 0 },
       { status: 403 }
     );
   }
